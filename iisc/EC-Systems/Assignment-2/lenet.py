@@ -210,10 +210,8 @@ def train_CNN(net: nn.Module, graph_prefix: str, epochs: int = 50):
     epoch_losses = []
     epoch_accuracies = []
     
-    # We choose a sufficiently large number of epochs for the network to converge
-    num_epochs = 50
-    for epoch in range(num_epochs):
-        print(f"Epoch [{epoch + 1}/{num_epochs}]")
+    for epoch in range(epochs):
+        print(f"Epoch [{epoch + 1}/{epochs}]")
         
         # Variables to track loss and accuracy for this epoch
         running_loss = 0.0
@@ -262,7 +260,7 @@ def train_CNN(net: nn.Module, graph_prefix: str, epochs: int = 50):
         
     # Plot Loss vs Epochs
     plt.figure(figsize=(10, 5))
-    plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o', linestyle='-', color='b')
+    plt.plot(range(1, epochs + 1), epoch_losses, marker='o', linestyle='-', color='b')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Training Loss vs Epochs')
@@ -274,7 +272,7 @@ def train_CNN(net: nn.Module, graph_prefix: str, epochs: int = 50):
     
     # Plot Accuracy vs Epochs
     plt.figure(figsize=(10, 5))
-    plt.plot(range(1, num_epochs + 1), epoch_accuracies, marker='o', linestyle='-', color='g')
+    plt.plot(range(1, epochs + 1), epoch_accuracies, marker='o', linestyle='-', color='g')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy (%)')
     plt.title('Training Accuracy vs Epochs')
