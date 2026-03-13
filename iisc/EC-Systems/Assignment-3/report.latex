@@ -1,0 +1,208 @@
+\documentclass{article}
+
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\usepackage{thmtools}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{framed}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\usepackage{subcaption}
+
+\colorlet{LightGray}{White!90!Periwinkle}
+\colorlet{LightOrange}{Orange!15}
+\colorlet{LightGreen}{Green!15}
+
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}}
+
+\setstretch{1.2}
+\geometry{
+    textheight=9in,
+    textwidth=5.5in,
+    top=1in,
+    headheight=12pt,
+    headsep=25pt,
+    footskip=30pt
+}
+
+% ------------------------------------------------------------------------------
+
+\begin{document}
+
+% ------------------------------------------------------------------------------
+% Cover Page and ToC
+% ------------------------------------------------------------------------------
+
+\title{ \normalsize \textsc{}
+		\\ [2.0cm]
+		\HRule{1.5pt} \\
+		\LARGE \textbf{\uppercase{E1 294o: Edge and Cloud Systems for Machine Learning Algorithms (Jan`26)}
+		\HRule{2.0pt} \\ [0.6cm] \LARGE{Assignment 3} \vspace*{10\baselineskip}}
+        
+		}
+\date{}
+\author{\textbf{Author} \\ 
+		Ritik Agarwal \\
+		MTech DSBA, IISc \\
+		10/03/2026}
+
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+
+% ------------------------------------------------------------------------------
+
+\section{Problem 1}
+
+The attached Python script implements LeNet-5 CNN training using the \texttt{all\_reduce} and \texttt{ring\_all\_reduce} strategies. A benchmark harness evaluates training performance across combinations of \texttt{num\_workers}, \texttt{num\_samples}, and \texttt{num\_epochs}.
+
+\subsection{Base Architecture}
+The foundational architecture for the reduction strategies includes:
+
+\begin{itemize}
+    \item \textbf{Multiprocessing \& Pipes:} We use Python's \texttt{multiprocessing} library to spawn independent workers. To simulate distributed memory, inter-process communication is established using the \texttt{Pipe} utility (configured via \texttt{setup\_all\_reduce\_pipes} and \texttt{setup\_ring\_pipes}).
+    \item \textbf{Training Loop \& Queue:} A common training function runs per worker, executing the reduction function internally. A \texttt{Queue} is used by the coordinator (worker 0) to return the final model weights to the main script. The queue allows communication from child to parent process.
+\end{itemize}
+
+PyTorch is used to initialize the LeNet-5 CNN (from Assignment 2), and Matplotlib is used to plot the benchmarks.
+
+\subsection{All-Reduce}
+In this approach, all workers must communicate their local gradients with each other, leading to all-to-all communication. Consequently, the number of communications increases by $\mathcal{O}(n^2)$, where $n$ is the number of workers. We implemented All-Reduce in the following way:
+
+\begin{itemize}
+    \item \textbf{Pipe Dictionary:} We create a dictionary mapping each worker index to a set of $readers$ and $writers$ lists containing unidirectional pipe connections. The $readers$ list grants a worker receive access from all others, while the $writers$ list provides send access, effectively establishing an all-to-all communication network.
+    \item \textbf{Gradient Averaging:} Once local gradients are calculated in the training loop, the all-reduce function is called. It broadcasts the local gradient to all workers via the $writers$ pipes and waits to receive the other workers' gradients through the $readers$ pipes.
+    \item Finally, the collected gradients are averaged and returned to the training loop.
+\end{itemize}
+
+The disadvantage of all-reduce is that it requires a high number of communications and transfers all gradients at once. These large tensors can quickly consume the entire available bandwidth in the communication channel, often overloading it.
+
+\subsection{Ring All-Reduce}
+Ring All-Reduce maximizes bandwidth and compute utilization by restricting communication to direct neighbors. This approach makes the communication overhead effectively independent of the number of workers, reducing training time complexity to $\mathcal{O}(n)$. We implemented this as follows:
+
+\begin{itemize}
+    \item \textbf{Pipe Dictionary:} Each worker $i$ uses a unidirectional pipe to send data to worker $(i + 1)$ and receive from worker $(i - 1)$, establishing a ring topology.
+    \item \textbf{Flatten Gradients and Chunk:} Because network gradients have varying shapes, they are first flattened into a single 1-D tensor and divided into $N$ equal chunks (where $N$ is the number of workers) to ensure balanced processing.
+    \item \textbf{Scatter-Reduce Phase:} Over $N - 1$ cycles, each worker receives a gradient chunk, adds it to its own corresponding chunk, and passes the sum forward. By the end, each worker holds the fully summed values for exactly one chunk.
+    \item \textbf{All-Gather Phase:} The fully summed chunks are then circulated around the ring for another $N - 1$ cycles. Once every worker has collected the complete set of summed chunks, they are averaged.
+    \item \textbf{Un-Flatten:} The averaged 1-D tensor is iteratively reshaped back into the original gradient tensor dimensions before returning.
+\end{itemize}
+
+This process efficiently utilizes available bandwidth to average the gradients, significantly accelerating the reduction.
+
+\subsection{Accuracy and Performance Comparison}
+The benchmarks were conducted in two environments:
+
+\begin{itemize}
+    \item \textbf{Laptop:} A smaller benchmark with fewer samples and workers, limited by laptop hardware.
+    \item \textbf{Server:} A scaled-up benchmark on a 64-core server, using a much larger number of samples and workers.
+    \item \textbf{Common Variables:} In both environments, the epochs were limited to $30$, and the batch size for training was set to $256$.
+\end{itemize}
+
+\subsubsection*{Observations}
+\begin{itemize}
+    \item \textbf{Floating-Point Variance:} Minor accuracy variations exist between the two methods due to the order of operations in floating-point addition (bulk averaging vs. sequential addition).
+    \item \textbf{Resource Utilization:} On the server, All-Reduce capped at roughly 50\% core utilization, whereas Ring All-Reduce successfully achieved 90\% utilization.
+    \item \textbf{Scaling Efficiency:} As seen in the performance graphs, All-Reduce slows down significantly as workers are added. Ring All-Reduce yields massive time savings when scaling both workers and samples exponentially.
+\end{itemize}
+
+% --- LAPTOP FIGURE ---
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{acc_laptop.png}
+        \caption{Accuracy}
+        \label{fig:acc_laptop}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{time_laptop.png}
+        \caption{Time}
+        \label{fig:time_laptop}
+    \end{subfigure}
+    \caption{Performance metrics: Accuracy and Time scaling in the Laptop environment.}
+    \label{fig:laptop_metrics}
+\end{figure}
+
+% --- SERVER FIGURE ---
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{acc_server.png}
+        \caption{Accuracy}
+        \label{fig:acc_server}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{time_server.png}
+        \caption{Time}
+        \label{fig:time_server}
+    \end{subfigure}
+    \caption{Performance metrics: Accuracy and Time scaling in the Server environment.}
+    \label{fig:server_metrics}
+\end{figure}
+
+\section{Problem 3}
+
+In the row-stationary data-flow of the Eyeriss architecture, each processing element (PE) is responsible for processing a specific row of data. To convolve a $3 \times 3$ Input Feature Map (IFMap) with a $2 \times 2$ kernel, we map the operations onto a $2 \times 2$ PE grid. 
+
+The PEs are initialized with the following data:
+\begin{itemize}
+    \item $PE_{1,1}$: Stores the 1st row of the kernel and the 1st row of the IFMap.
+    \item $PE_{1,2}$: Empty.
+    \item $PE_{2,1}$: Stores the 2nd row of the kernel and the 2nd row of the IFMap.
+    \item $PE_{2,2}$: Stores the 3rd row of the IFMap.
+\end{itemize}
+
+\subsection{Cycle 1}
+$PE_{1,1}$ and $PE_{2,1}$ simultaneously perform multiply-accumulate (MAC) operations to calculate the partial sums (PSums) for the $(1,1)$ position of the Output Feature Map (OFMap). These PSums are added across the columns to compute the final pixel value. 
+
+The OFMap after Cycle 1 is:
+\[
+\begin{bmatrix} 8 & \_ \\ \_ & \_ \end{bmatrix}
+\]
+
+\subsection{Cycle 2}
+Only the first column of the PE grid remains active. The kernel values are convolved with the next sequence of IFMap elements to calculate the PSums for the $(1,2)$ position of the OFMap. These are again added across the columns. 
+
+The OFMap after Cycle 2 is:
+\[
+\begin{bmatrix} 8 & 19 \\ \_ & \_ \end{bmatrix}
+\]
+
+\subsection{Cycle 3}
+By the end of Cycle 2, processing for the first row of the IFMap is complete. In the PE grid, the kernel data is shifted one column to the right, and the IFMap data is shifted diagonally. 
+
+The updated PE grid states are:
+\begin{itemize}
+    \item $PE_{1,1}$: Empty.
+    \item $PE_{1,2}$: Stores the 1st row of the kernel and the 2nd row of the IFMap.
+    \item $PE_{2,1}$: Empty.
+    \item $PE_{2,2}$: Stores the 2nd row of the kernel and the 3rd row of the IFMap.
+\end{itemize}
+
+Convolution is now performed for the $(2,1)$ element of the OFMap. The PSums are calculated in $PE_{1,2}$ and $PE_{2,2}$ and added together to get the new output.
+
+The OFMap after Cycle 3 is:
+\[
+\begin{bmatrix} 8 & 19 \\ 16 & \_ \end{bmatrix}
+\]
+
+\subsection{Cycle 4}
+Similar to Cycle 2, the kernel values convolve with the corresponding IFMap elements to calculate the PSums for the $(2,2)$ position. 
+
+The final OFMap after Cycle 4 is:
+\[
+\begin{bmatrix} 8 & 19 \\ 16 & 6 \end{bmatrix}
+\]
+
+\end{document}\textbf{}

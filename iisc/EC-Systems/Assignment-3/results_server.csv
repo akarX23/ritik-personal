@@ -1,0 +1,13 @@
+approach,n_samples,num_workers,epochs,accuracy,train_time_s
+all_reduce,60000,16,30,0.0927,66.7
+ring_all_reduce,60000,16,30,0.101,22.03
+all_reduce,60000,32,30,0.095,61.22
+ring_all_reduce,60000,32,30,0.1051,16.52
+all_reduce,60000,64,30,0.098,63.81
+ring_all_reduce,60000,64,30,0.1007,11.35
+all_reduce,120000,16,30,0.101,66.85
+ring_all_reduce,120000,16,30,0.1028,22.34
+all_reduce,120000,32,30,0.0974,61.11
+ring_all_reduce,120000,32,30,0.0892,16.67
+all_reduce,120000,64,30,0.1032,65.87
+ring_all_reduce,120000,64,30,0.1001,11.37

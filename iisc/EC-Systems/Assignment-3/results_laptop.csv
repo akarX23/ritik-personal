@@ -1,0 +1,9 @@
+approach,n_samples,num_workers,epochs,accuracy,train_time_s
+all_reduce,100,4,30,0.0958,2.55
+ring_all_reduce,100,4,30,0.1135,0.71
+all_reduce,100,8,30,0.1028,3.4
+ring_all_reduce,100,8,30,0.0974,0.96
+all_reduce,5000,4,30,0.1149,16.8
+ring_all_reduce,5000,4,30,0.101,7.44
+all_reduce,5000,8,30,0.1009,17.2
+ring_all_reduce,5000,8,30,0.1013,6.91
