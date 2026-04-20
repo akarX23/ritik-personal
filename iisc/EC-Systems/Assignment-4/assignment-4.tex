@@ -62,7 +62,12 @@
 
 \section{Problem 1 - Let’s do some math}
 \subsection{KV Cache Calculation}
-\textbf{Given Input:}
+
+The code has been implemented in the file \verb|kv-cache-calc.py| attached in the zip file.
+
+\vspace{1.3em}
+
+\noindent \textbf{Given Input:}
 
 \begin{itemize}
     \item Model Specification
@@ -356,11 +361,30 @@ A few observations from Figure \ref{fig:my_image_label}:
 
 \section{Problem 2 - Transformer Implementation with KV Caching}
 
-All the TODO sections in the given \verb|transform_skeleton.py| have been implemented. Both prefill and generate are implemented completely with float32 precision.
+All the TODO sections in the given \verb|transform_skeleton.py| have been implemented. Both prefill and generate are implemented completely with float32 precision. The attention calculations are done with float64 to achieve higher precision results, but type-casted back to float32 at the end of attention.
 
 \vspace{1.2em}
 
-\noindent The terminal outputs for both evaluation modes are shown in Figure~\ref{fig:output_logs}. Specifically, the output of \verb|--mode evaluate| is presented in Figure~\ref{fig:output_evaluate}, and the output of \verb|--mode kv_evaluate| is presented in Figure~\ref{fig:output_kv_evaluate}.
+\noindent The terminal outputs for both evaluation modes are shown in Figure~\ref{fig:output_logs_2}. Specifically, the output of \verb|--mode evaluate| is presented in Figure~\ref{fig:output_evaluate_2}, and the output of \verb|--mode kv_evaluate| is presented in Figure~\ref{fig:output_kv_evaluate_2}. While the tolerance requirement has been updated to 2 decimal places, below are the results for both 2 and 5 decimal places.   
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{eval-2.png}
+        \caption{Without KV Cache (\texttt{evaluate})}
+        \label{fig:output_evaluate_2}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{eval-2.png}
+        \caption{With KV Cache (\texttt{kv\_evaluate})}
+        \label{fig:output_kv_evaluate_2}
+    \end{subfigure}
+    \caption{Terminal output logs for both evaluation modes for 2 decimal places.}
+    \label{fig:output_logs_2}
+\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -368,17 +392,17 @@ All the TODO sections in the given \verb|transform_skeleton.py| have been implem
         \centering
         \includegraphics[width=\textwidth]{no-cache-eval.png}
         \caption{Without KV Cache (\texttt{evaluate})}
-        \label{fig:output_evaluate}
+        \label{fig:output_evaluate_5}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{cache-eval.png}
         \caption{With KV Cache (\texttt{kv\_evaluate})}
-        \label{fig:output_kv_evaluate}
+        \label{fig:output_kv_evaluate_5}
     \end{subfigure}
-    \caption{Terminal output logs for both evaluation modes.}
-    \label{fig:output_logs}
+    \caption{Terminal output logs for both evaluation modes for 5 decimal places.}
+    \label{fig:output_logs_5}
 \end{figure}
 
 \vspace{1em}
