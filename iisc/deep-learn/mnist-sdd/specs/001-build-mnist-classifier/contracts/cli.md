@@ -7,7 +7,7 @@ Purpose: train the MNIST model, run scheduled validation/testing, and write metr
 Arguments:
 - `-e` or `--epochs`: number of training epochs, default `10`
 - `-r` or `--results`: results directory, default `./results`
-- `-d` or `--device`: required device selection, `cpu` or `gpu`
+- `-d` or `--device`: required device selection, `cpu` or `xpu`
 - `-b` or `--batch`: batch size, default `64`
 - `-lr` or `--lr`: learning rate, default `0.001`
 - `-m` or `--data`: MNIST data directory, default `./data`
@@ -16,14 +16,16 @@ Behavior:
 - Trains the fixed `784 -> 256 -> 128 -> 10` PyTorch model.
 - Records per-epoch loss, accuracy, elapsed time, and device in CSV files.
 - Runs validation and test checks every 5 epochs.
-- Fails if the requested device is unavailable.
+- Logs total run time as `training_time_seconds` in `run_summary.csv`.
+- Fails if the requested device is unavailable (no automatic fallback).
 
 Outputs:
 - `metrics_train.csv`
 - `metrics_validation.csv`
 - `metrics_test.csv`
 - `run_summary.csv`
-- model checkpoint file
+- `predictions.csv` (final test predictions and labels)
+- model checkpoint file (`model.pt`)
 
 ## `analyze.py`
 
@@ -36,10 +38,12 @@ Behavior:
 - Reads CSV files from the results directory.
 - Generates training, validation, and testing curves.
 - Produces classification metrics visualizations.
-- Produces CPU-vs-GPU comparison plots when both device runs are available.
+- Produces CPU-vs-XPU comparison plots when both device runs are available.
+- Produces CPU-vs-XPU training time comparison from `run_summary.csv` entries.
 
 Outputs:
 - learning curve images
 - classification report plots
 - confusion matrix image
-- device comparison image when both device datasets exist
+- device quality comparison image when both device datasets exist
+- device time comparison image when both device summaries exist

@@ -8,10 +8,11 @@ Represents one end-to-end training invocation.
 
 Fields:
 - `run_id`: unique run identifier
-- `device`: selected execution device, `cpu` or `gpu`
+- `device`: selected execution device, `cpu` or `xpu`
 - `epochs`: total epoch count
 - `start_time`: run start timestamp
 - `end_time`: run end timestamp
+- `training_time_seconds`: total elapsed training time in seconds
 - `status`: running, completed, or failed
 - `results_dir`: output directory for artifacts
 
@@ -38,7 +39,22 @@ Fields:
 - `split`: validation or test
 - `loss`: scalar loss value
 - `accuracy`: scalar accuracy value
+- `elapsed_seconds`: evaluation duration for the snapshot
 - `device`: device used during evaluation
+
+### DeviceTimeComparison
+
+Represents timing comparison between one CPU run and one XPU run.
+
+Fields:
+- `comparison_id`: unique comparison identifier
+- `cpu_run_id`: linked `TrainingRun` id for CPU
+- `xpu_run_id`: linked `TrainingRun` id for XPU
+- `cpu_training_time_seconds`: total CPU run training time
+- `xpu_training_time_seconds`: total XPU run training time
+- `time_delta_seconds`: `cpu_training_time_seconds - xpu_training_time_seconds`
+- `speedup_ratio`: `cpu_training_time_seconds / xpu_training_time_seconds`
+- `generated_at`: timestamp when comparison was computed
 
 ### ClassificationReport
 
@@ -66,12 +82,15 @@ Fields:
 - One `TrainingRun` has many `EpochMetrics` rows.
 - One `TrainingRun` has zero or more `EvaluationSnapshot` rows.
 - One `TrainingRun` has one `ClassificationReport` and one `ConfusionMatrix` after testing.
+- One `DeviceTimeComparison` references two `TrainingRun` records (`cpu` and `xpu`).
 - `analysis.py` consumes the persisted CSV outputs derived from these entities.
 
 ## Validation Rules
 
-- `device` must be explicitly set to `cpu` or `gpu`.
+- `device` must be explicitly set to `cpu` or `xpu`.
 - `epoch` values are positive integers.
 - `loss` and `accuracy` are numeric scalars saved with consistent column names across CSV files.
+- `elapsed_seconds` and `training_time_seconds` are non-negative numeric values.
+- `speedup_ratio` is computed only when `xpu_training_time_seconds > 0`.
 - `labels` must cover the 10 MNIST classes.
 - Visualization inputs must exist before analysis runs.

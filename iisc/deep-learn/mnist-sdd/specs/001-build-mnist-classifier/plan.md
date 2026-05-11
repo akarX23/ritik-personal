@@ -5,34 +5,40 @@
 
 ## Summary
 
-Build a small PyTorch MNIST classifier with a fixed fully connected architecture
-(`784 -> 256 -> 128 -> 10`), explicit device selection, deterministic metric
-logging to CSV, and analysis utilities that generate learning curves and
-classification-quality visualizations. The implementation favors a minimal
-dependency set, short CLI arguments, and clear separation between training,
-evaluation, and analysis.
+Build a compact PyTorch MNIST classifier with fixed architecture
+(`784 -> 256 -> 128 -> 10`), explicit device execution (`cpu` or `xpu`),
+deterministic CSV logging, and offline analysis utilities. The implementation
+must log epoch timing and total training time, then compare both model quality
+and elapsed time between CPU and XPU runs.
 
 ## Technical Context
 
 **Language/Version**: Python 3.11+  
-**Primary Dependencies**: PyTorch, torchvision, matplotlib (torch/torchvision installed from the PyTorch nightly xpu wheel index)  
-**Storage**: Local filesystem CSVs, saved plots, and model checkpoints  
-**Testing**: pytest plus lightweight CLI/integration checks  
-**Target Platform**: Linux workstation or server with optional GPU  
+**Primary Dependencies**: PyTorch, torchvision, matplotlib  
+**Storage**: Local filesystem CSV files, plots, and model checkpoints  
+**Testing**: pytest (unit, contract, and integration checks)  
+**Target Platform**: Linux laptop/workstation with CPU and integrated XPU  
 **Project Type**: CLI-oriented ML application  
-**Performance Goals**: Compact MNIST training runs with per-epoch metrics logged; analysis must complete offline from saved CSVs  
-**Constraints**: Explicit device selection only; no automatic CPU fallback when GPU is unavailable; minimal dependency footprint; no raw Python loops over batch elements in the model path  
-**Scale/Scope**: MNIST digits 0-9, single-project repository, local experiment workflow
+**Performance Goals**: 
+- Log `elapsed_seconds` per epoch and `training_time_seconds` per run in CSV outputs
+- Produce CPU vs XPU time comparison output for completed paired runs
+- Preserve model quality target: MNIST test accuracy >= 98% for standard run  
+**Constraints**:
+- Device must be explicitly selected by user (`cpu` or `xpu`)
+- Torch CUDA/GPU detection is not used in this environment
+- If `xpu` is selected but unavailable, fail fast with actionable error and no fallback
+- Minimal dependency footprint (no pandas)  
+**Scale/Scope**: MNIST digits 0-9, local experiment workflow, single feature scope
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Testing Standards: Training, evaluation, and visualization behaviors will be specified as independently testable slices.
-- Code Quality Standards: Type hints, concise functions, and static analysis expectations are documented in the spec.
-- UX Consistency: CLI argument names, outputs, and error paths are kept short and explicit.
-- Performance Requirements: Per-epoch timing, CSV logging, and CPU/GPU comparison outputs are defined.
-- Commit Control: Any commit work remains explicitly user-approved only.
+- Testing Standards: PASS. Test-first tasks planned per user story (unit + integration + contract).
+- Code Quality Standards: PASS. Type hints and small focused modules are required in implementation tasks.
+- UX Consistency: PASS. CLI arguments and failure messages are explicit and stable.
+- Performance Requirements: PASS. Epoch/run time logging and CPU/XPU timing comparison are included.
+- Commit Control: PASS. Workflow keeps explicit user approval before any commit.
 
 ## Project Structure
 
@@ -52,11 +58,13 @@ specs/001-build-mnist-classifier/
 
 ```text
 src/
+├── __init__.py
 ├── model.py
 ├── train.py
 ├── analyze.py
-├── requirements.txt
-└── __init__.py
+├── device.py
+├── data.py
+└── metrics.py
 
 tests/
 ├── unit/
@@ -64,10 +72,34 @@ tests/
 └── contract/
 ```
 
-**Structure Decision**: Use a single Python package with three entry points:
-`model.py` for the architecture, `train.py` for training/evaluation/CSV export,
-and `analyze.py` for offline plotting and CPU-vs-GPU comparison.
+**Structure Decision**: Single Python CLI project. Keep training pipeline and
+analysis in separate modules so time and quality comparisons can run offline
+from persisted CSV artifacts.
+
+## Phase 0: Research Outcomes
+
+- Device strategy: use `cpu` and `xpu` as supported runtime targets.
+- Runtime detection strategy: check XPU availability via PyTorch XPU API; do not
+  rely on CUDA checks in this project.
+- Timing strategy: capture epoch duration and total run duration in CSV, then
+  compute and visualize CPU vs XPU time deltas in analysis.
+
+## Phase 1: Design Outputs
+
+- `research.md` updated with explicit CPU/XPU decisions and alternatives.
+- `data-model.md` updated to include timing fields and comparison entity.
+- `contracts/cli.md` updated with `cpu|xpu` contract and timing outputs.
+- `quickstart.md` updated with paired-run comparison flow.
+- `.github/copilot-instructions.md` already references this feature plan.
+
+## Post-Design Constitution Re-Check
+
+- Testing Standards: PASS. Independent testable slices retained for US1, US2, US3.
+- Code Quality Standards: PASS. Public interfaces remain typed and modular by design.
+- UX Consistency: PASS. CLI contract now explicit for `cpu|xpu` and clear errors.
+- Performance Requirements: PASS. Training-time logging and CPU/XPU time comparison integrated.
+- Commit Control: PASS. No auto-commit behavior introduced.
 
 ## Complexity Tracking
 
-No constitution violations require justification for this feature.
+No constitution violations requiring justification.

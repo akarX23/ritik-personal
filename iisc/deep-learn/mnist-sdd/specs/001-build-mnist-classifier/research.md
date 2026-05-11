@@ -1,25 +1,41 @@
 # Research: MNIST Digit Classifier Pipeline
 
-## Decisions
+## Decision 1: Runtime devices are `cpu` and `xpu` only
 
-- Use PyTorch and torchvision only for model and dataset handling.
-- Install torch and torchvision from the PyTorch nightly xpu wheel index to match the requested project setup.
-- Use matplotlib for all plots and visual summaries.
-- Use the standard library csv module for metric persistence instead of adding a data-frame dependency.
-- Store outputs locally as CSV files and plot images in the results directory.
-- Require the user to choose the device explicitly for training and testing.
+- Decision: Expose device contract as `cpu` or `xpu`, where XPU represents the integrated laptop GPU.
+- Rationale: The runtime environment does not provide CUDA GPU detection, and user intent is explicit CPU/XPU testing.
+- Alternatives considered:
+	- `cpu|gpu` generic naming: rejected because it does not match runtime behavior.
+	- Automatic fallback from `xpu` to `cpu`: rejected by explicit no-fallback requirement.
 
-## Rationale
+## Decision 2: Use PyTorch XPU availability checks, not CUDA checks
 
-- PyTorch matches the requested architecture and keeps the model implementation compact.
-- torchvision provides MNIST and standard dataset transforms without extra project code.
-- matplotlib is sufficient for training curves, confusion matrices, and comparison plots.
-- The csv module keeps dependencies minimal while still supporting downstream analysis.
-- Explicit device selection avoids hidden behavior and matches the clarified requirement.
+- Decision: Device validation logic will use XPU capability checks through PyTorch XPU APIs.
+- Rationale: CUDA checks are irrelevant in this environment and would produce misleading behavior.
+- Alternatives considered:
+	- `torch.cuda.is_available()`: rejected because CUDA/GPU is not detected here.
+	- Silent fallback if XPU unavailable: rejected due to fail-fast policy.
 
-## Alternatives Considered
+## Decision 3: Persist both per-epoch and run-level timing in CSV
 
-- Pandas for CSV handling: rejected to keep the dependency list small.
-- Automatic CPU fallback when GPU is unavailable: rejected because the user requires explicit device instruction.
-- Additional plotting libraries such as seaborn: rejected because matplotlib is enough for the required visuals.
-- A more complex model family such as convolutional layers: deferred because the requested fixed MLP architecture is sufficient for MNIST and simpler to verify.
+- Decision: Record `elapsed_seconds` per epoch and `training_time_seconds` per run in CSV artifacts.
+- Rationale: The feature requires reproducible, quantitative CPU vs XPU time comparison.
+- Alternatives considered:
+	- Logging only per-epoch time: rejected because total-run comparison becomes indirect.
+	- Logging only total time: rejected because epoch-level diagnostics are needed for curve interpretation.
+
+## Decision 4: Analysis must include CPU vs XPU time comparison
+
+- Decision: `analyze.py` generates a dedicated timing comparison output when both CPU and XPU run summaries are available.
+- Rationale: Time comparison is now a first-class requirement alongside quality metrics.
+- Alternatives considered:
+	- Manual spreadsheet comparison: rejected as non-reproducible workflow.
+	- Console-only timing output: rejected because visual outputs are required for reporting.
+
+## Decision 5: Keep dependencies minimal
+
+- Decision: Use `torch`, `torchvision`, `matplotlib`, and stdlib `csv`.
+- Rationale: Minimal dependencies simplify setup and keep the project aligned with the existing plan.
+- Alternatives considered:
+	- Pandas/seaborn: rejected as unnecessary for required outputs.
+	- Additional experiment trackers: rejected as out of local-scope workflow.
