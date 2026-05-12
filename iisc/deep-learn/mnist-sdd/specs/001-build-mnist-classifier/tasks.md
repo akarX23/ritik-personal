@@ -6,7 +6,7 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 # Tasks: MNIST Digit Classifier Pipeline
 
 **Input**: Design documents from `/specs/001-build-mnist-classifier/`
-**Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/cli.md ✅
+**Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/cli.md ✅, contracts/docker-cli.md ✅
 
 **Tests**: Test tasks are MANDATORY. Every user story includes tests written before implementation tasks.
 
@@ -138,6 +138,35 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ---
 
+## Phase 7: User Story 4 — Containerize the Project (Priority: P4)
+
+**Goal**: Package the entire project into a minimal Docker image using `python:3.11-slim`, CPU-only PyTorch wheel, and host-mounted volumes for data and results. The container must run training, analysis, and tests without any XPU/GPU driver dependencies.
+
+**Independent Test**: `docker build -t mnist-classifier .` succeeds; `docker run --rm mnist-classifier python -m src.train --help` exits 0; `docker run --rm mnist-classifier pytest tests/unit/ -v` exits 0; `docker run --rm mnist-classifier python -m src.train --device xpu` exits non-zero with a clear device error.
+
+### Tests for User Story 4 (MANDATORY) ⚠️
+
+> **Write these tests FIRST — they must FAIL before the files are created**
+
+  - [X] T038 [P] [US4] Write contract tests for Docker support files in `tests/contract/test_docker_files.py`: assert `Dockerfile` exists and contains `FROM python:3.11-slim`, `ENTRYPOINT ["python", "-m", "src.train"]`, `VOLUME ["/app/data"]`, `VOLUME ["/app/results"]`; assert `requirements-docker.txt` exists and does NOT contain `torch` with XPU index URL; assert `.dockerignore` exists and includes `data/` and `.git/`
+
+### Implementation for User Story 4
+
+  - [X] T039 [P] [US4] Create `requirements-docker.txt` at project root containing only `matplotlib` and `pytest` — no `torch` or `torchvision` entries (those are installed inline in Dockerfile from the CPU wheel index)
+  - [X] T040 [P] [US4] Create `.dockerignore` at project root excluding: `__pycache__/`, `*.pyc`, `.venv/`, `venv/`, `data/`, `results/`, `*.pt`, `.DS_Store`, `Thumbs.db`, `*.tmp`, `*.swp`, `.git/`
+  - [X] T041 [US4] Create `Dockerfile` at project root: base `python:3.11-slim`; install `torch torchvision` from `https://download.pytorch.org/whl/cpu` in a dedicated `RUN` layer; copy and install `requirements-docker.txt`; `COPY src/ src/` and `COPY tests/ tests/`; declare `VOLUME ["/app/data"]` and `VOLUME ["/app/results"]`; set `ENV PYTHONUNBUFFERED=1`; set `ENTRYPOINT ["python", "-m", "src.train"]`; set `CMD ["--device", "cpu", "--data", "/app/data", "--results", "/app/results"]`
+  - [X] T042 [US4] Update `specs/001-build-mnist-classifier/quickstart.md` to add a Docker section: `docker build -t mnist-classifier .`, volume-mounted train invocation, analysis override invocation, and `pytest tests/` inside container
+
+**Checkpoint**: Full project runnable inside Docker container — US4 independently deliverable
+
+---
+
+## Phase 8: Final Commit Approval
+
+- [ ] T043 Request explicit user approval before committing Docker containerization changes (Dockerfile, .dockerignore, requirements-docker.txt, quickstart.md update, contract tests)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -148,12 +177,15 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 - **Phase 4 (US2 — Curves)**: Depends on Phase 2; reads CSV artifacts produced by US1 `train.py`, but visualization logic is independently testable using fixture CSV data
 - **Phase 5 (US3 — Classification)**: Depends on Phase 2 and T029 (predictions CSV added to `train.py`); independently testable with fixture data
 - **Phase 6 (Polish)**: Depends on all user story phases complete
+- **Phase 7 (US4 — Docker)**: Depends on Phase 1 (project structure); independent of Phases 3–5 (wraps existing source); can begin after Phase 2 is complete
+- **Phase 8 (Final Commit)**: Depends on Phase 7 complete and T038 contract test passing
 
 ### User Story Dependencies
 
 - **US1 (P1)**: Can start after Phase 2 — no dependencies on other stories
 - **US2 (P2)**: Can start after Phase 2 — integrates with US1 CSV output but independently testable with fixtures
 - **US3 (P3)**: Requires T029 (predictions CSV export in `train.py`) before integration testing; analysis logic independently testable with fixtures
+- **US4 (P4)**: Depends only on `src/` and `tests/` existing (Phase 1 complete); no dependency on US1–US3 logic; fully parallelisable with Phases 3–6
 
 ### Within Each User Story
 
@@ -173,6 +205,8 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 - T023, T024 (US2 plots): parallel — different plot functions in same file
 - T026–T028 (US3 tests): fully parallel
 - T030, T031 (US3 plots): parallel — different functions
+- **T038 (US4 contract test)**: parallel with T039, T040 — different files
+- **T039, T040 (US4 support files)**: parallel — independent files; T041 (Dockerfile) depends on both
 
 ---
 
@@ -194,6 +228,20 @@ Phase 3 — US1 Tests (all parallel once Phase 2 done)
 Phase 3 — US1 Implementation (sequential after tests)
   T013 (model.py) ──┐
   T014 (train.py arg parser) ──┼──→ T015 (training loop) → T016 → T017 → T018
+```
+
+## Parallel Example: User Story 4 (Docker)
+
+```
+Phase 7 — US4 Tests (write first)
+  └── T038 (test_docker_files.py)   ← must FAIL before T039–T041
+
+Phase 7 — US4 Implementation
+  T039 (requirements-docker.txt) ──┐
+  T040 (.dockerignore)            ──┼──→ T041 (Dockerfile) → T042 (quickstart.md)
+
+Phase 8 — Commit Approval
+  └── T043 (user approval gate)
 ```
 
 ---

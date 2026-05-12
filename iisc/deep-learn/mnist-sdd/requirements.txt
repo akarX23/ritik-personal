@@ -1,6 +1,5 @@
---index-url https://download.pytorch.org/whl/nightly/xpu
-torch
-torchvision
+torch --index-url https://download.pytorch.org/whl/nightly/xpu
+torchvision --index-url https://download.pytorch.org/whl/nightly/xpu
 
 matplotlib
 pytest

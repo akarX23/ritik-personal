@@ -11,6 +11,12 @@
 
 - Q: Should the system automatically switch to CPU if GPU is unavailable? → A: No. Device must be explicitly instructed by the user for training and testing; no automatic fallback is allowed.
 
+### Session 2026-05-12
+
+- Q: Should the container support XPU device passthrough, or run CPU-only inside Docker? → A: CPU-only inside Docker; no XPU/GPU driver dependencies in the image.
+- Q: How should MNIST data be provisioned inside the container? → A: Host volume mount (`-v ./data:/app/data`); fall back to downloading via torchvision only if the data directory is absent.
+- Q: What is the acceptable compressed image size ceiling? → A: No upper limit; use a small base image (e.g., `python:3.11-slim`).
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -97,6 +103,8 @@ As a practitioner, I want classification metrics visualizations so that I can un
 - **FR-010**: System MUST NOT automatically switch devices; when the selected device is unavailable, it MUST fail fast with a clear error and remediation guidance.
 - **FR-011**: System MUST define acceptance tests for core training workflow, evaluation workflow, and visualization workflow before implementation.
 - **FR-012**: System MUST enforce explicit user approval before any commit operation related to this feature work.
+- **FR-013**: System MUST provide a Dockerfile that packages all runtime dependencies and enables the full training, evaluation, and analysis workflow to run inside a container on CPU only; no XPU/GPU driver dependencies are included in the image. The base image MUST be a slim variant (e.g., `python:3.11-slim`); there is no compressed-size ceiling.
+- **FR-014**: The container MUST accept a host-mounted volume at `/app/data` for MNIST data; if no volume is mounted and the data directory is absent, the training script MUST download MNIST via torchvision automatically.
 
 ### Constitution Alignment Requirements *(mandatory)*
 
@@ -132,3 +140,4 @@ As a practitioner, I want classification metrics visualizations so that I can un
 - Users explicitly select the compute device for training and testing before execution starts.
 - Run outputs and visualizations are stored locally and do not require external reporting services.
 - Standard model training and evaluation practices are acceptable defaults unless later refined in planning.
+- The containerized workflow runs on CPU only; XPU/GPU device passthrough is not supported inside Docker and is used only on the host directly.

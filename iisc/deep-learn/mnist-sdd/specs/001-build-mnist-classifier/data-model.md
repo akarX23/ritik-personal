@@ -94,3 +94,19 @@ Fields:
 - `speedup_ratio` is computed only when `xpu_training_time_seconds > 0`.
 - `labels` must cover the 10 MNIST classes.
 - Visualization inputs must exist before analysis runs.
+
+### ContainerConfig
+
+Represents the runtime configuration for a containerised invocation.
+
+Fields:
+- `base_image`: Docker base image tag (e.g., `python:3.11-slim`)
+- `device`: always `cpu` inside container; no XPU/GPU driver deps included
+- `data_mount`: optional host path bound to `/app/data` inside the container
+- `results_mount`: optional host path bound to `/app/results` inside the container
+- `download_fallback`: boolean; if `true`, torchvision downloads MNIST when `/app/data` is empty
+
+Validation Rules:
+- `device` inside container is always `cpu`; any other value is rejected at runtime by `src.device`
+- `data_mount` is optional; when absent, `download_fallback` must be `true`
+- `results_mount` should be provided to persist output beyond container lifetime
