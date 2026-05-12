@@ -47,12 +47,29 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="DIR",
         help="Results directory containing CSV files (required)",
     )
+    p.add_argument(
+        "-b", "--filter-batch",
+        type=int,
+        default=None,
+        metavar="INT",
+        dest="filter_batch",
+        help=(
+            "Scope learning curves and the epoch-comparison table to this batch size. "
+            "Final Metrics table always shows all batch sizes. "
+            "Exits with an error listing available batch sizes if none match."
+        ),
+    )
     return p
 
 
 # ---------------------------------------------------------------------------
 # Internal CSV helpers
 # ---------------------------------------------------------------------------
+
+
+def filter_rows_by_batch(rows: list[dict], batch_size: int) -> list[dict]:
+    """Return only rows whose batch_size column equals *batch_size*."""
+    return [r for r in rows if int(r["batch_size"]) == batch_size]
 
 
 def _read_csv(path: Path) -> list[dict]:
@@ -148,8 +165,21 @@ def build_final_metrics_table(train_rows: list[dict], val_rows: list[dict], test
     return "\n".join(lines)
 
 
-def _build_epoch_comparison_table(train_rows: list[dict], val_rows: list[dict], test_rows: list[dict]) -> str:
-    """Build markdown table with sampled historical rows across splits."""
+def _build_epoch_comparison_table(
+    train_rows: list[dict],
+    val_rows: list[dict],
+    test_rows: list[dict],
+    filter_batch: int | None = None,
+) -> str:
+    """Build markdown table with sampled historical rows across splits.
+
+    When *filter_batch* is set, only rows whose batch_size matches are included.
+    """
+    if filter_batch is not None:
+        train_rows = filter_rows_by_batch(train_rows, filter_batch)
+        val_rows = filter_rows_by_batch(val_rows, filter_batch)
+        test_rows = filter_rows_by_batch(test_rows, filter_batch)
+
     merged_rows = []
     for split, rows in (("train", train_rows), ("validation", val_rows), ("test", test_rows)):
         sampled = sample_epoch_rows(rows)
@@ -220,8 +250,12 @@ def _build_config_section(results_dir: Path, train_rows: list[dict], run_summary
     )
 
 
-def generate_results_report(results_dir: Path) -> Path:
-    """Generate results.md with config, final metrics, and epoch comparison."""
+def generate_results_report(results_dir: Path, filter_batch: int | None = None) -> Path:
+    """Generate results.md with config, final metrics, and epoch comparison.
+
+    When *filter_batch* is set, the epoch-comparison table is restricted to
+    that batch size. The Final Metrics table always shows all batch sizes.
+    """
     train_rows = _read_csv(results_dir / "metrics_train.csv")
     val_rows = _read_csv(results_dir / "metrics_validation.csv")
     test_rows = _read_csv(results_dir / "metrics_test.csv")
@@ -236,7 +270,7 @@ def generate_results_report(results_dir: Path) -> Path:
         "",
         build_final_metrics_table(train_rows, val_rows, test_rows),
         "",
-        _build_epoch_comparison_table(train_rows, val_rows, test_rows),
+        _build_epoch_comparison_table(train_rows, val_rows, test_rows, filter_batch=filter_batch),
         "",
     ]
 
@@ -250,11 +284,19 @@ def generate_results_report(results_dir: Path) -> Path:
 # ---------------------------------------------------------------------------
 
 
-def plot_learning_curves(results_dir: Path) -> None:
-    """Plot train/val/test loss and accuracy curves into *results_dir*."""
+def plot_learning_curves(results_dir: Path, filter_batch: int | None = None) -> None:
+    """Plot train/val/test loss and accuracy curves into *results_dir*.
+
+    When *filter_batch* is set, only rows matching that batch size are plotted.
+    """
     train_rows = _read_csv(results_dir / "metrics_train.csv")
     val_rows = _read_csv(results_dir / "metrics_validation.csv")
     test_rows = _read_csv(results_dir / "metrics_test.csv")
+
+    if filter_batch is not None:
+        train_rows = filter_rows_by_batch(train_rows, filter_batch)
+        val_rows = filter_rows_by_batch(val_rows, filter_batch)
+        test_rows = filter_rows_by_batch(test_rows, filter_batch)
 
     # ---- loss curve -------------------------------------------------------
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -475,18 +517,21 @@ def plot_classification_report(results_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def run_analysis(results_dir: str) -> None:
+def run_analysis(results_dir: str, filter_batch: int | None = None) -> None:
     """Execute the full analysis pipeline from *results_dir*.
 
     Parameters
     ----------
     results_dir:
         Path to a directory containing CSV outputs from train.py.
+    filter_batch:
+        Optional batch size to scope learning curves and epoch-comparison table.
+        When set, fails fast if no rows for that batch size are found.
 
     Raises
     ------
     SystemExit
-        If the directory does not exist.
+        If the directory does not exist or filter_batch has no matching rows.
     """
     path = Path(results_dir)
     run_id = str(uuid.uuid4())
@@ -499,13 +544,29 @@ def run_analysis(results_dir: str) -> None:
         )
         sys.exit(1)
 
+    # Fail-fast filter_batch validation (FR-028)
+    if filter_batch is not None:
+        train_path = path / "metrics_train.csv"
+        if train_path.exists():
+            all_train_rows = _read_csv(train_path)
+            available = sorted(
+                {int(r["batch_size"]) for r in all_train_rows if r.get("batch_size", "")},
+            )
+            if filter_batch not in available:
+                print(
+                    f"[analyze] Error: --filter-batch {filter_batch} not found in CSV files.\n"
+                    f"Available batch sizes: {', '.join(str(b) for b in available)}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
     logger.info("event=lifecycle stage=start run_id=%s results_dir=%s", run_id, path)
 
     errors: list[str] = []
 
     # Learning curves
     try:
-        plot_learning_curves(path)
+        plot_learning_curves(path, filter_batch=filter_batch)
         print(f"[analyze] Saved learning_curves_*.png → {path}")
         logger.info("event=lifecycle stage=learning_curves status=ok")
     except FileNotFoundError as exc:
@@ -558,7 +619,7 @@ def run_analysis(results_dir: str) -> None:
     # Markdown report generation
     try:
         logger.info("event=lifecycle stage=results_report status=start")
-        report_path = generate_results_report(path)
+        report_path = generate_results_report(path, filter_batch=filter_batch)
         print(f"[analyze] Saved results.md → {report_path}")
         logger.info("event=lifecycle stage=results_report status=ok path=%s", report_path)
     except FileNotFoundError as exc:
@@ -604,7 +665,7 @@ def _configure_analysis_logger(run_id: str, results_path: Path) -> logging.Logge
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-    run_analysis(args.results)
+    run_analysis(args.results, filter_batch=args.filter_batch)
 
 
 if __name__ == "__main__":

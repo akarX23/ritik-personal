@@ -152,3 +152,12 @@
 - Alternatives considered:
   - Current command rows only: rejected by clarification.
   - Optional scope flag: deferred as non-required complexity.
+
+## Decision 20: `--filter-batch` / `-b` optional flag scopes curves and epoch-comparison; final-metrics table unfiltered
+
+- Decision: Add optional `--filter-batch INT` (short form `-b`) to `src/analyze.py`. When provided: learning-curve plots and the epoch-comparison table in `results.md` include only rows matching that batch size. The Final Metrics by Batch Size table always shows all batch sizes. When the flag is omitted, all existing all-batches behavior is preserved. When the specified batch size is absent from the CSV files, execution fails fast with a clear error that lists all available batch sizes found in the files.
+- Rationale: Users running multi-batch experiments need per-batch curve inspection without losing the cross-batch summary. Fail-fast with an available-list error follows FR-009 (actionable failure feedback) and avoids silent empty output.
+- Alternatives considered:
+  - Require `--filter-batch` always: rejected — breaks backward compatibility and forces users to look up a batch size before every analysis invocation.
+  - Silent empty output on missing batch: rejected — produces confusing blank plots with no remediation path.
+  - Separate `--filter-epoch-table` flag for just the epoch-comparison: rejected — over-engineering; users who filter curves want consistent scoping in the report.

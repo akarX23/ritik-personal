@@ -306,3 +306,69 @@ def test_results_md_includes_all_historical_matching_rows(tmp_path):
     content = (results / "results.md").read_text(encoding="utf-8")
     assert "old-32" in content
     assert "new-32" in content
+
+
+# ---------------------------------------------------------------------------
+# T093 – Integration test: --filter-batch using existing results/ fixture data (FR-026/027/028)
+# ---------------------------------------------------------------------------
+
+SMOKE_RESULTS = (
+    "results/phase10-check/run-smoke"
+)
+
+
+@pytest.mark.skipif(
+    not __import__("pathlib").Path(SMOKE_RESULTS).exists(),
+    reason="Smoke results fixture not present; skipping filter-batch integration test",
+)
+def test_filter_batch_scopes_epoch_comparison_to_single_batch(tmp_path):
+    """Run full analysis on smoke fixture with filter_batch=64.
+
+    Epoch Comparison must contain only batch-64 rows; Final Metrics must still
+    contain all three batch sizes (32, 64, 128).
+    """
+    import shutil
+    from src.analyze import run_analysis
+
+    # Copy fixture to tmp_path so the test can write outputs without polluting source
+    results_copy = tmp_path / "run-smoke"
+    shutil.copytree(SMOKE_RESULTS, results_copy)
+
+    run_analysis(str(results_copy), filter_batch=64)
+
+    report = (results_copy / "results.md").read_text(encoding="utf-8")
+
+    # --- Final Metrics must show ALL batches (FR-027) ---
+    assert "## Final Metrics by Batch Size" in report
+    assert "| 32 |" in report
+    assert "| 64 |" in report
+    assert "| 128 |" in report
+
+    # --- Epoch Comparison must only contain batch-64 rows ---
+    epoch_section_start = report.index("## Epoch Comparison")
+    epoch_section = report[epoch_section_start:]
+    # Each data row in epoch comparison is "| <epoch> | <batch_size> | ..."
+    # Rows for batch 32 or 128 must not appear
+    import re
+    epoch_data_rows = re.findall(r"^\| \d+ \| (\d+) \|", epoch_section, re.MULTILINE)
+    assert all(bs == "64" for bs in epoch_data_rows), (
+        f"Epoch Comparison should only contain batch_size=64 rows, found: {set(epoch_data_rows)}"
+    )
+
+
+@pytest.mark.skipif(
+    not __import__("pathlib").Path(SMOKE_RESULTS).exists(),
+    reason="Smoke results fixture not present; skipping filter-batch integration test",
+)
+def test_filter_batch_curves_use_only_matching_rows(tmp_path):
+    """Learning curves written with filter_batch=64 must not error and must produce PNGs."""
+    import shutil
+    from src.analyze import run_analysis
+
+    results_copy = tmp_path / "run-smoke-curves"
+    shutil.copytree(SMOKE_RESULTS, results_copy)
+
+    run_analysis(str(results_copy), filter_batch=64)
+
+    assert (results_copy / "learning_curves_loss.png").exists()
+    assert (results_copy / "learning_curves_accuracy.png").exists()

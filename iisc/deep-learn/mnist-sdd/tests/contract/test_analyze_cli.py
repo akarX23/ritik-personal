@@ -260,3 +260,103 @@ def test_analyze_generates_results_md_in_results_dir(tmp_path):
     report = report_path.read_text(encoding="utf-8")
     assert "Final Metrics by Batch Size" in report
     assert "Epoch Comparison" in report
+
+
+# ---------------------------------------------------------------------------
+# T089 – --filter-batch / -b flag parsing (FR-026)
+# ---------------------------------------------------------------------------
+
+
+def test_filter_batch_long_flag_parses_as_int():
+    """--filter-batch INT must be accepted and stored as an int."""
+    parser = _get_parser()
+    args = parser.parse_args(["-r", "/tmp/r", "--filter-batch", "64"])
+    assert args.filter_batch == 64
+
+
+def test_filter_batch_short_flag_parses_as_int():
+    """-b INT must be the short form for --filter-batch."""
+    parser = _get_parser()
+    args = parser.parse_args(["-r", "/tmp/r", "-b", "32"])
+    assert args.filter_batch == 32
+
+
+def test_filter_batch_defaults_to_none():
+    """Omitting --filter-batch must leave the attribute as None (all-batches behavior)."""
+    parser = _get_parser()
+    args = parser.parse_args(["-r", "/tmp/r"])
+    assert args.filter_batch is None
+
+
+# ---------------------------------------------------------------------------
+# T090 – fail-fast when filter-batch has no matching rows (FR-028)
+# ---------------------------------------------------------------------------
+
+
+def _write_multibatch_csv_fixture(results_dir: Path) -> None:
+    """Write minimal 3-batch CSV fixture for filter-batch error tests."""
+    metric_cols = [
+        "run_id", "batch_size", "epoch", "split",
+        "loss", "accuracy", "elapsed_seconds", "device",
+    ]
+    summary_cols = [
+        "run_id", "batch_size", "device", "epochs",
+        "start_time", "end_time", "training_time_seconds",
+        "final_train_loss", "final_train_accuracy",
+        "final_val_loss", "final_val_accuracy",
+        "final_test_loss", "final_test_accuracy",
+        "status", "results_dir", "learning_rate",
+    ]
+    for split_name, fname in [
+        ("train", "metrics_train.csv"),
+        ("validation", "metrics_validation.csv"),
+        ("test", "metrics_test.csv"),
+    ]:
+        rows = []
+        for bs in (32, 64):
+            rows.append({
+                "run_id": f"r-{bs}", "batch_size": bs, "epoch": 1,
+                "split": split_name, "loss": 0.5, "accuracy": 0.8,
+                "elapsed_seconds": 1.0, "device": "cpu",
+            })
+        _write_csv(results_dir / fname, metric_cols, rows)
+    _write_csv(
+        results_dir / "run_summary.csv",
+        summary_cols,
+        [{
+            "run_id": "r-32", "batch_size": 32, "device": "cpu", "epochs": 1,
+            "start_time": "", "end_time": "", "training_time_seconds": 1.0,
+            "final_train_loss": 0.5, "final_train_accuracy": 0.8,
+            "final_val_loss": 0.5, "final_val_accuracy": 0.8,
+            "final_test_loss": 0.5, "final_test_accuracy": 0.8,
+            "status": "completed", "results_dir": str(results_dir), "learning_rate": 0.001,
+        }],
+    )
+
+
+def test_run_analysis_exits_nonzero_when_filter_batch_not_found(tmp_path, capsys):
+    """run_analysis must sys.exit(1) when --filter-batch value has no CSV rows (FR-028)."""
+    from src.analyze import run_analysis
+
+    results_dir = Path(tmp_path) / "results"
+    _write_multibatch_csv_fixture(results_dir)
+
+    with pytest.raises(SystemExit) as exc_info:
+        run_analysis(str(results_dir), filter_batch=999)
+
+    assert exc_info.value.code == 1
+
+
+def test_run_analysis_error_message_lists_available_batches(tmp_path, capsys):
+    """Error output must list all available batch sizes when filter-batch not found (FR-028)."""
+    from src.analyze import run_analysis
+
+    results_dir = Path(tmp_path) / "results"
+    _write_multibatch_csv_fixture(results_dir)
+
+    with pytest.raises(SystemExit):
+        run_analysis(str(results_dir), filter_batch=999)
+
+    stderr = capsys.readouterr().err
+    assert "32" in stderr
+    assert "64" in stderr

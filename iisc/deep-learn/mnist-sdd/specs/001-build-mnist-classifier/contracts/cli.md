@@ -41,6 +41,7 @@ Purpose: Generate curves and comparisons from saved CSV outputs.
 
 Arguments:
 - `-r` or `--results`: results directory, required
+- `-b` or `--filter-batch`: optional integer; when provided, scopes learning-curve plots and the epoch-comparison table in `results.md` to rows matching this batch size only
 
 Behavior:
 - Reads CSV files from the results directory.
@@ -49,11 +50,13 @@ Behavior:
 - Produces CPU-vs-XPU comparison plots when both device runs are available.
 - Produces CPU-vs-XPU training time comparison from `run_summary.csv` entries.
 - Generates `results.md` with:
-	- final metrics comparison table by batch size (train/validation/test loss and accuracy)
-	- epoch comparison table sampled every 10 epochs plus final epoch
+	- final metrics comparison table by batch size (train/validation/test loss and accuracy) — always shows ALL batch sizes, never filtered
+	- epoch comparison table sampled every 10 epochs plus final epoch — filtered to `--filter-batch` when specified
 	- configuration section including device, epochs, learning rate, and compared batch-size list
+- When `--filter-batch` is provided, learning-curve plots include only rows where `batch_size` matches the specified value; the epoch-comparison table is likewise restricted to those rows.
+- When `--filter-batch` is omitted, all-batches behavior is preserved (identical to pre-FR-026 behavior).
+- When `--filter-batch` specifies a batch size with no matching rows, exits with a non-zero status and an error message listing all batch sizes found in the CSV files.
 - Comparison scope for `results.md` includes all matching historical rows in selected results-directory CSV files.
-- Emits lifecycle progress logs to console and per-run plain-text log file in the results directory.
 
 Outputs:
 - learning curve images

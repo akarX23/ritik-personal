@@ -1,44 +1,39 @@
-# Implementation Plan: MNIST Digit Classifier Pipeline
+# Implementation Plan: MNIST Digit Classifier Pipeline — Filter-Batch Analysis Extension
 
 **Branch**: `001-build-mnist-classifier` | **Date**: 2026-05-12 | **Spec**: `specs/001-build-mnist-classifier/spec.md`
 **Input**: Feature specification from `specs/001-build-mnist-classifier/spec.md`
 
 ## Summary
 
-Update the existing MNIST pipeline to support multi-batch training in one command (`--batches`), persist combined CSV rows with explicit `batch_size`, and produce `results.md` from historical rows in the results directory. The report must include configuration metadata plus two comparison tables: final split metrics per batch size and epoch-sampled comparisons every 10 epochs plus final epoch.
+Add optional `--filter-batch INT` / `-b INT` flag to `src/analyze.py` that scopes learning-curve plots and the epoch-comparison table in `results.md` to a single user-specified batch size. The Final Metrics by Batch Size table always shows all batch sizes. When the specified batch size is absent from the CSV files, execution fails fast with a clear error listing all available batch sizes.
+
+This is an incremental extension to the existing analysis pipeline (no training-loop changes). All tests use synthetic CSV fixtures or the pre-existing `results/` directory outputs — no new training runs are required.
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+  
-**Primary Dependencies**: `torch`, `torchvision`, `matplotlib`, stdlib `csv`, stdlib `logging`, `pytest`  
-**Storage**: Local filesystem artifacts (CSV, PNG, model checkpoint, plain-text run logs, markdown report)  
-**Testing**: `pytest` (unit, integration, contract) with test-first updates for new CLI and reporting behavior  
-**Target Platform**: Linux host; Docker runtime (`python:3.11-slim`)  
-**Project Type**: CLI ML workflow (training + analysis)  
-**Performance Goals**:
-- Standard CPU run keeps SC-002 at test accuracy >= 97%
-- Multi-batch runs maintain measurable per-batch timings and reproducible comparisons
-- Primary workflow reliability remains >= 95% successful valid runs (SC-001)
+**Language/Version**: Python 3.11+
+**Primary Dependencies**: `matplotlib`, stdlib `csv`, `argparse`, `pytest`
+**Storage**: Local filesystem CSV inputs; PNG and `.md` outputs
+**Testing**: `pytest` (unit, integration, contract); test-first; no new training runs in test scope
+**Target Platform**: Linux host; Docker CPU runtime (unchanged)
+**Project Type**: CLI ML analysis workflow (analysis-only extension)
+**Performance Goals**: Analysis of 100-epoch multi-batch results completes in under 10 seconds
 **Constraints**:
-- Device remains explicit (`cpu` or `xpu`) with no fallback
-- Multi-batch execution is sequential per batch size
-- Shared CSV outputs must include `batch_size` and distinct `run_id` per batch execution
-- `results.md` compares all matching historical rows in selected results directory
-- Code-quality gates (lint and type checks) remain mandatory before commit approval
-**Scale/Scope**:
-- MNIST digits only (0-9)
-- Fixed architecture: 784 -> 256 -> 128 -> 10
-- Local results directories may accumulate multiple historical runs for cross-batch comparison
+- Training pipeline (`src/train.py`, `src/metrics.py`) must NOT be modified
+- `-b` short form must not conflict with existing `analyze.py` flags (currently only `-r` is defined)
+- When `--filter-batch` is omitted, all existing behavior is preserved exactly (backward compatible)
+- Tests must use synthetic CSV data or existing `results/` artifacts — no new training runs
+**Scale/Scope**: Single analysis script extension; affects `src/analyze.py`, test files, and docs only
 
 ## Constitution Check (Pre-Design)
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Testing Standards: PASS - New multi-batch and report requirements have explicit test-first expectations.
-- Code Quality Standards: PASS - Changes remain in typed Python modules and contract docs; lint/type gates retained.
-- UX Consistency: PASS - New CLI behavior and report structure are explicit and deterministic.
-- Performance Requirements: PASS - Per-batch timing/accuracy comparisons are measurable and preserved in shared outputs.
-- Commit Control: PASS - No commit is planned without explicit user approval.
+- Testing Standards: PASS — New flag, filter helper, and fail-fast behavior each require dedicated tests; test-first is mandatory.
+- Code Quality Standards: PASS — Changes remain in typed Python; flake8 + mypy gates are retained.
+- UX Consistency: PASS — `--filter-batch` / `-b` follows existing short-flag convention; error message lists alternatives (consistent with FR-009 pattern).
+- Performance Requirements: PASS — Filter is a pure in-memory row predicate on already-loaded CSV data; no new I/O.
+- Commit Control: PASS — No commit without explicit user approval.
 
 ## Project Structure
 
@@ -46,76 +41,55 @@ Update the existing MNIST pipeline to support multi-batch training in one comman
 
 ```text
 specs/001-build-mnist-classifier/
-|-- plan.md
-|-- research.md
-|-- data-model.md
-|-- quickstart.md
-|-- contracts/
-|   |-- cli.md
-|   `-- docker-cli.md
-`-- tasks.md
+├── plan.md              # This file
+├── research.md          # Updated with Decision 20
+├── data-model.md        # Unchanged (ResultsReport entity already covers filter scope)
+├── contracts/cli.md     # Updated: --filter-batch added to analyze section
+├── quickstart.md        # Updated: --filter-batch usage example added
+└── tasks.md             # To be regenerated by /speckit.tasks
 ```
 
 ### Source Code (repository root)
 
 ```text
 src/
-|-- __init__.py
-|-- analyze.py
-|-- data.py
-|-- device.py
-|-- metrics.py
-|-- model.py
-`-- train.py
+└── analyze.py           # Only modified file: new flag, filter helper, fail-fast check
 
 tests/
-|-- contract/
-|   |-- test_analyze_cli.py
-|   |-- test_docker_files.py
-|   `-- test_train_cli.py
-|-- integration/
-|   |-- test_analyze_curves.py
-|   |-- test_classification_analysis.py
-|   `-- test_train_pipeline.py
-`-- unit/
-    |-- test_analyze_classification.py
-    |-- test_analyze_curves.py
-    |-- test_data.py
-    |-- test_device.py
-    |-- test_metrics.py
-    `-- test_model.py
+├── contract/
+│   └── test_analyze_cli.py    # New: --filter-batch flag parsing tests
+├── unit/
+│   └── test_analyze.py        # New: filter_rows_by_batch() unit tests + fail-fast error unit test
+└── integration/
+    └── test_analyze_curves.py # New: integration test using existing results/ fixture data
 ```
 
-**Structure Decision**: Keep single-project CLI layout and evolve existing modules/contracts for multi-batch reporting features.
+**Structure Decision**: Single-project CLI layout retained; only `src/analyze.py` changes.
 
 ## Phase 0: Research Summary
 
-Existing decisions (1-14) remain valid. Additional decisions for new clarifications are captured in updated `research.md`:
-- `--batches` comma-separated CLI contract
-- Sequential batch execution strategy with distinct run IDs
-- Shared CSV schema extension with `batch_size`
-- `results.md` generation format and historical-row comparison scope
-- Epoch sampling rule (every 10 epochs plus final epoch)
+All unknowns resolved in clarification session (2026-05-12). New decision added to `research.md`:
+- Decision 20: `--filter-batch` / `-b` optional flag scopes curves and epoch-comparison; final-metrics table unfiltered; fail-fast on missing batch with available-list error.
 
 No unresolved clarifications remain.
 
 ## Phase 1: Design & Contracts
 
-Updated artifacts for new requirements:
-- `specs/001-build-mnist-classifier/data-model.md` (adds batch-aware run/report entities)
-- `specs/001-build-mnist-classifier/contracts/cli.md` (extends train/analyze contracts for `--batches` and `results.md`)
-- `specs/001-build-mnist-classifier/quickstart.md` (adds multi-batch usage and report validation steps)
+Updated artifacts:
+- `specs/001-build-mnist-classifier/contracts/cli.md` — `--filter-batch`/`-b` added to analyze contract
+- `specs/001-build-mnist-classifier/quickstart.md` — usage example with `--filter-batch`
+- `specs/001-build-mnist-classifier/research.md` — Decision 20 added
 
-Agent context reference remains correct in `.github/copilot-instructions.md` and points to this plan path.
+`data-model.md` requires no changes (no new entities; `ResultsReport.table_epoch_sampled` already represents sampled rows; filter is a runtime concern).
 
 ## Constitution Check (Post-Design)
 
-- Testing Standards: PASS - New report scope and batch semantics are contract-testable.
-- Code Quality Standards: PASS - Added requirements stay within existing quality gates.
-- UX Consistency: PASS - User-facing CLI/report contracts are explicit.
-- Performance Requirements: PASS - Batch-wise and epoch-wise comparison outputs preserve measurable outcomes.
-- Commit Control: PASS - Commit approval remains explicit and external to planning output.
+- Testing Standards: PASS — Contract, unit, and integration tests defined for filter flag and error path.
+- Code Quality Standards: PASS — Single-function helper `filter_rows_by_batch()` is small, typed, and testable.
+- UX Consistency: PASS — Error output format matches existing missing-file error pattern.
+- Performance Requirements: PASS — No new I/O; filter is O(n) over already-loaded rows.
+- Commit Control: PASS — Approval gate remains in place.
 
 ## Complexity Tracking
 
-No constitutional violations or complexity exceptions were required.
+No constitutional violations or complexity exceptions required.

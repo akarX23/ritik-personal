@@ -238,6 +238,56 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ---
 
+## Phase 11: Filter-Batch Analysis Extension (FR-026/027/028)
+
+**Goal**: Add optional `--filter-batch INT` / `-b INT` flag to `src/analyze.py` that scopes learning-curve plots and the epoch-comparison table to a single batch size, while keeping the Final Metrics table unfiltered. Fail fast with an actionable error when the specified batch size is absent.
+
+**Independent Test**: Run `python -m src.analyze -r results/phase10-check/run-smoke --filter-batch 64` — curves and epoch-comparison must contain only batch-64 rows; final-metrics table must still show all three batch sizes (32, 64, 128).
+
+### Tests for Filter-Batch Extension (MANDATORY — write first, must FAIL before implementation) ⚠️
+
+- [X] T089 [P] [US4] Contract test: `--filter-batch` / `-b` flag parses as optional int with no default in tests/contract/test_analyze_cli.py
+- [X] T090 [P] [US4] Contract test: `run_analysis` exits non-zero with error listing available batches when `--filter-batch` value has no matching rows, using a synthetic CSV fixture in tests/contract/test_analyze_cli.py
+- [X] T091 [P] [US4] Unit test: `filter_rows_by_batch(rows, batch_size)` returns only rows whose `batch_size` field matches the given int in tests/unit/test_analyze.py
+- [X] T092 [P] [US4] Unit test: `_build_epoch_comparison_table` applies `filter_batch` when set and returns unfiltered rows when `filter_batch` is `None`, verified with synthetic multi-batch CSV data in tests/unit/test_analyze.py
+- [X] T093 [US4] Integration test: run full analysis on `results/phase10-check/run-smoke` with `filter_batch=64`; assert generated curves reference only batch-64 rows and epoch-comparison table omits rows for batches 32 and 128 in tests/integration/test_analyze_curves.py
+
+### Implementation for Filter-Batch Extension (after all T089–T093 tests fail)
+
+- [X] T094 [US4] Add `--filter-batch INT` / `-b INT` optional argument (default `None`) to `build_parser()` in src/analyze.py
+- [X] T095 [US4] Implement `filter_rows_by_batch(rows: list[dict], batch_size: int) -> list[dict]` helper in src/analyze.py that returns rows where `int(row["batch_size"]) == batch_size`
+- [X] T096 [US4] Add fail-fast validation in `run_analysis()` in src/analyze.py: if `filter_batch` is set and no train rows match, print error listing all unique `batch_size` values found in CSV files and call `sys.exit(1)`
+- [X] T097 [US4] Apply `filter_rows_by_batch` to train/val/test row lists in `plot_learning_curves()` when `filter_batch` is not `None` in src/analyze.py
+- [X] T098 [US4] Apply `filter_rows_by_batch` to sampled rows inside `_build_epoch_comparison_table()` when `filter_batch` is not `None` in src/analyze.py (Final Metrics table must NOT be filtered — FR-027)
+- [X] T099 [US4] Thread `filter_batch` parameter from parsed args through `run_analysis()` into `plot_learning_curves()` and `generate_results_report()` calls in src/analyze.py
+
+**Checkpoint**: `--filter-batch 64` on a 3-batch results directory produces curves and epoch-comparison for batch 64 only; final-metrics table still shows all batches; missing batch exits with error listing available sizes.
+
+---
+
+## Phase 12: Polish for Filter-Batch Feature
+
+**Purpose**: Code quality gates, acceptance validation, and commit approval for FR-026/027/028.
+
+### Code Quality Gates (FR-011, CAR-002)
+
+- [X] T100 [P] Run flake8 on src/analyze.py with `--max-line-length 120` and confirm zero violations
+- [X] T101 [P] Run mypy on src/analyze.py with `--ignore-missing-imports` and confirm zero type errors
+
+### Test Suite & Acceptance Validation
+
+- [X] T102 Run full pytest suite: `pytest tests/ -v` and confirm all T089–T093 tests pass alongside all prior tests
+- [X] T103 Validate FR-026 backward compatibility: run `python -m src.analyze -r results/phase10-check/run-smoke` without `--filter-batch` and confirm output is identical to pre-filter behavior (all batch sizes in curves and tables)
+- [X] T104 Validate FR-027: run `python -m src.analyze -r results/phase10-check/run-smoke --filter-batch 64` and confirm `results.md` Final Metrics table shows rows for all three batch sizes (32, 64, 128) while the Epoch Comparison table contains only batch-64 rows
+- [X] T105 Validate FR-028: run `python -m src.analyze -r results/phase10-check/run-smoke --filter-batch 999` and confirm non-zero exit code and error message that lists available batch sizes (32, 64, 128)
+- [X] T106 Validate quickstart example: execute `python -m src.analyze -r ./results/phase10-check/run-smoke --filter-batch 64` as documented in quickstart.md and verify plots and results.md are produced without errors
+
+### Commit Gate (FR-012, CAR-005)
+
+- [X] T107 Request explicit user approval for filter-batch implementation; present validation results from T100–T106 before any commit
+
+---
+
 ## Extended Dependencies & Execution Order
 
 ### Phase Dependencies (Extended)
@@ -253,6 +303,15 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
   - T079, T080 can run in parallel [P]
   - T081–T087 sequential, each validates different aspect
   - T088 is final gate, requires explicit approval
+- Phase 11 (Filter-Batch Extension): depends on Phase 10 (committed baseline)
+  - Tests T089–T093: must be written and FAIL before implementation T094–T099
+  - T089–T092 can run in parallel [P]; T093 depends on T089–T092
+  - T094 must be complete before T095–T099
+  - T095 required by T097, T098; T096 required by T099; T097–T099 can be parallelized after T094, T095
+- Phase 12 (Filter-Batch Polish): depends on Phase 11 completion
+  - T100, T101 can run in parallel [P]
+  - T102–T106 sequential, each validates different acceptance criterion
+  - T107 is final gate, requires explicit approval
 
 ### Multi-Batch Training Flow (Phase 8)
 
@@ -292,6 +351,22 @@ T076: Full integration (depends on T071–T075)
 T077, T078: Logging and file placement (depend on T076)
 ```
 
+### Filter-Batch Extension Flow (Phase 11)
+
+```
+T089–T092: Parallel contract + unit tests
+   ↓
+T093: Integration test (depends on T089–T092 passing conceptually; must FAIL before impl)
+   ↓
+T094: Add --filter-batch arg to build_parser()
+   ↓
+T095: filter_rows_by_batch() helper (depends on T094)
+   ↓
+T096, T097, T098: Parallel — fail-fast check, plot filter, epoch-comparison filter (each depends on T095)
+   ↓
+T099: Thread filter_batch through run_analysis() (depends on T096–T098)
+```
+
 ### Parallel Opportunities (Extended)
 
 **Phase 8 Tests:**
@@ -315,6 +390,17 @@ T077, T078: Logging and file placement (depend on T076)
 **Phase 10 Polish:**
 - T079, T080 [P] lint/type checks can run in parallel
 - T081–T087 sequential, each validates previous layers
+
+**Phase 11 Tests:**
+- T089, T090, T091, T092 [P] can run in parallel
+
+**Phase 11 Implementation (after tests pass):**
+- T095, T096 can start once T094 completes
+- T097, T098, T099 can start once T095 completes; T096 also blocks T099
+
+**Phase 12 Polish:**
+- T100, T101 [P] lint/type checks can run in parallel
+- T102–T106 sequential, each validates a distinct acceptance criterion
 
 ---
 
@@ -345,6 +431,12 @@ T077, T078: Logging and file placement (depend on T076)
 2. Test suite and acceptance validation (T081–T087)
 3. User approval and commit (T088)
 
+### Filter-Batch Validation (Phase 12)
+
+1. Code quality gates (T100–T101)
+2. Test suite and acceptance validation (T102–T106)
+3. User approval and commit (T107)
+
 ---
 
 ## Task Summary
@@ -358,10 +450,12 @@ T077, T078: Logging and file placement (depend on T076)
 | 5: US2 (Curves) | T028–T036 | Learning visualization | ✅ Complete |
 | 6: US3 (Classification) | T037–T043 | Quality metrics | ✅ Complete |
 | 7: Polish | T044–T053 | Code quality, container, acceptance | ✅ Complete |
-| 8: US1 Extended | T054–T065 | **Multi-batch training** | 🔄 Pending |
-| 9: US2 Extended | T066–T078 | **Results report generation** | 🔄 Pending |
-| 10: Final Polish | T079–T088 | Code quality for new features, approval | ⏳ Pending |
-| **Total** | **88 Tasks** | MNIST with multi-batch + reporting | |
+| 8: US1 Extended | T054–T065 | **Multi-batch training** | ✅ Complete |
+| 9: US2 Extended | T066–T078 | **Results report generation** | ✅ Complete |
+| 10: Final Polish | T079–T088 | Code quality for new features, approval | ✅ Complete |
+| 11: Filter-Batch Extension | T089–T099 | **--filter-batch flag (FR-026/027/028)** | ⏳ Pending |
+| 12: Filter-Batch Polish | T100–T107 | Code quality, acceptance, approval | ⏳ Pending |
+| **Total** | **107 Tasks** | MNIST with multi-batch + reporting + filter-batch | |
 
 ---
 
@@ -373,11 +467,13 @@ T077, T078: Logging and file placement (depend on T076)
 - **[Story] label**: Maps task to user story (US1, US2, US3) for traceability
 - **Test-First**: All T054–T058, T066–T070 tests must be written and FAIL before implementation begins
 - **Backward Compatibility**: Single --batch flag mode remains functional when --batches is not specified
+- **Filter-Batch (FR-026/027/028)**: T089–T093 tests must FAIL before T094–T099 implementation; tests use existing `results/phase10-check/run-smoke` fixture data — no training re-runs
 - **MVP Increments**:
   - Commit 1d771c6: US1–US3 complete (T001–T053) ✅
-  - Next: Phase 8 (T054–T065) adds multi-batch capability
-  - Then: Phase 9 (T066–T078) adds results.md comparison
-  - Finally: Phase 10 (T079–T088) validates quality and gates commit
+  - Commit b69fdb5: Phase 8 (T054–T065) adds multi-batch capability ✅
+  - Commit f16df24: Phases 9–10 (T066–T088) adds results.md + quality gates ✅
+  - Next: Phase 11 (T089–T099) adds filter-batch to analyze.py
+  - Then: Phase 12 (T100–T107) validates and gates commit
 
 ---
 

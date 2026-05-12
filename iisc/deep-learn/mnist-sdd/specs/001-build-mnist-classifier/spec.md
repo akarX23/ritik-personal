@@ -28,6 +28,12 @@
 - Q: How should run identity be recorded for sequential multi-batch training in shared CSV files? → A: Use a distinct `run_id` for each batch-size execution and include `batch_size` in every row.
 - Q: What run scope should `results.md` compare in the results directory? → A: Compare all matching historical rows in the results-directory CSV files.
 
+### Session 2026-05-12 (continued — batch-size filter)
+
+- Q: Should learning curves and the epoch-comparison table in results.md be filterable to a single batch size? → A: Yes — add optional `--filter-batch INT` / `-b INT` flag to analyze.py; when provided, curves and epoch-comparison are scoped to that batch size; final-metrics table always shows all batch sizes.
+- Q: What flag name and optionality should the batch-size filter use? → A: `--filter-batch INT` with short form `-b`; optional, defaults to all-batches behavior when omitted.
+- Q: What should happen when the specified filter batch size has no matching rows in the CSV files? → A: Exit with a clear error that lists all available batch sizes found in the CSV files.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -127,6 +133,9 @@ As a practitioner, I want classification metrics visualizations so that I can un
 - **FR-023**: The epoch-comparison table in `results.md` MUST include epoch rows at multiples of 10 and MUST always include the final epoch even when it is not a multiple of 10.
 - **FR-024**: For multi-batch training commands, each batch-size execution MUST use a distinct `run_id` and every persisted metric row MUST include `batch_size` for unambiguous comparison in shared CSV files.
 - **FR-025**: `results.md` MUST compare all matching historical rows present in the selected results-directory CSV files (not only rows from the current command).
+- **FR-026**: Analysis CLI MUST accept an optional `--filter-batch INT` flag (short form `-b INT`) to scope learning curves and the epoch-comparison table in `results.md` to a single specified batch size; when omitted, all-batches behavior is preserved.
+- **FR-027**: When `--filter-batch` is provided, the Final Metrics by Batch Size table MUST still display all batch sizes present in the CSV files; only learning curves and the epoch-comparison table are restricted to the specified batch size.
+- **FR-028**: When `--filter-batch` is provided and no rows for that batch size exist in the CSV files, the analysis workflow MUST exit with a clear error that lists all available batch sizes found in the files.
 
 ### Constitution Alignment Requirements *(mandatory)*
 

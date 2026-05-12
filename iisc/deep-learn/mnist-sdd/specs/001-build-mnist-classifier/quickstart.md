@@ -47,6 +47,20 @@ python -m src.analyze -r ./results
 
 `analyze.py` also writes `results.md` that compares matching historical rows in the selected results directory.
 
+### Filter learning curves and epoch-comparison to one batch size
+
+When results contain multiple batch sizes, use `--filter-batch` (`-b`) to scope curves and the epoch-comparison table to a single batch:
+
+```bash
+python -m src.analyze -r ./results --filter-batch 64
+# or using the short form:
+python -m src.analyze -r ./results -b 64
+```
+
+The Final Metrics by Batch Size table in `results.md` is always shown for all batch sizes regardless of `--filter-batch`.
+
+If the specified batch size is not found in the CSV files, the command exits with a non-zero status and prints all available batch sizes.
+
 ## Validate Standard Accuracy Target (SC-002)
 
 Check the most recent run summary row and confirm `test_accuracy >= 0.97`:
