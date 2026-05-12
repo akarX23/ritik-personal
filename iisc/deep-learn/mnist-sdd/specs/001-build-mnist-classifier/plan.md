@@ -1,43 +1,44 @@
 # Implementation Plan: MNIST Digit Classifier Pipeline
 
-**Branch**: `001-build-mnist-classifier` | **Date**: 2026-05-12 | **Spec**: [spec.md](spec.md)
-**Input**: Feature specification from `/specs/001-build-mnist-classifier/spec.md`
+**Branch**: `001-build-mnist-classifier` | **Date**: 2026-05-12 | **Spec**: `specs/001-build-mnist-classifier/spec.md`
+**Input**: Feature specification from `specs/001-build-mnist-classifier/spec.md`
 
 ## Summary
 
-Deliver a reproducible MNIST training and analysis pipeline that supports explicit host runtime device selection (`cpu` or `xpu`) and a CPU-only Docker workflow. The system persists metrics and artifacts, generates analysis plots, and now includes explicit progress logging for both training and analysis: concise per-epoch plain-text logs to console and per-run files named `run_<run_id>.log`.
+Build and maintain a reproducible MNIST training and analysis pipeline that uses explicit device selection (`cpu` or `xpu`), fails fast when the selected device is unavailable, records timing and quality metrics, emits concise progress logs to console and per-run files, supports CPU-only container execution, and enforces code-quality gates. The standard success target is test accuracy >= 97% for standard runs.
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+
-**Primary Dependencies**: PyTorch, torchvision, matplotlib, stdlib `csv`, stdlib `logging`
-**Storage**: Local filesystem (`data/`, `results/`, CSV files, plots, model checkpoint, per-run log files)
-**Testing**: pytest (unit, contract, integration)
-**Target Platform**: Linux host (CPU/XPU) and Linux container (`python:3.11-slim`, CPU-only)
-**Project Type**: CLI-oriented ML application with Docker packaging
+**Language/Version**: Python 3.11+  
+**Primary Dependencies**: `torch`, `torchvision`, `matplotlib`, stdlib `csv`, stdlib `logging`, `pytest`  
+**Storage**: Local filesystem artifacts (CSV, PNG, model checkpoint, plain-text run logs)  
+**Testing**: `pytest` (unit, integration, contract) — test-first for all new and changed behavior  
+**Target Platform**: Linux host; Docker runtime (`python:3.11-slim`)  
+**Project Type**: CLI ML workflow (training + analysis)  
 **Performance Goals**:
-- MNIST test accuracy >= 98% for standard runs
-- Persist `elapsed_seconds` per epoch and `training_time_seconds` per run
-- Emit concise per-epoch progress logs without per-batch noise
+- MNIST test accuracy >= 97% for standard training runs (SC-002)
+- Primary workflow (train/evaluate/visualize) succeeds in >= 95% of valid runs (SC-001)
+- Track `elapsed_seconds` (epoch) and `training_time_seconds` (run) for regression checks  
 **Constraints**:
-- Explicit device selection only; no automatic fallback
-- Container execution is CPU-only
-- Progress logs must be plain text in console and `run_<run_id>.log` per run
-- Each per-epoch line must include: `epoch`, `elapsed_seconds`, `loss`, `accuracy`
-- No pandas dependency
-**Scale/Scope**: Local single-user workflow, MNIST digits 0-9, single-results-directory artifacts
+- Device is explicit (`cpu` or `xpu`) with no automatic fallback
+- If `xpu` is selected and unavailable, fail with actionable error
+- Logs are plain text and must include epoch fields: `epoch`, `elapsed_seconds`, `loss`, `accuracy`
+- Docker image is CPU-only, uses `python:3.11-slim`, volume mount + download fallback
+- All code must pass linting and static type checks before commit  
+**Scale/Scope**:
+- MNIST digits (0-9) only
+- Single-model architecture: 784 -> 256 -> 128 -> 10
+- Local/lab execution with local output directories
 
-## Constitution Check
+## Constitution Check (Pre-Design)
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Testing Standards: PASS. Existing test-first workflow; logging adds new contract and unit checks.
-- Code Quality Standards: PASS. Public interfaces remain typed; logging via stdlib keeps complexity low.
-- UX Consistency: PASS. Clear, concise progress logs and actionable error messages are retained.
-- Performance Requirements: PASS. Timing metrics are preserved; logging granularity constrained to per-epoch for low overhead.
-- Commit Control: PASS. Any commit still requires explicit user approval in-session.
-
-No constitutional violations identified.
+- Testing Standards: PASS — test-first enforced per user story; tests precede implementation tasks.
+- Code Quality Standards: PASS — lint + static analysis required by constitution; explicit code-quality validation gate added.
+- UX Consistency: PASS — fail-fast device validation, actionable errors, stable CLI flags, stable outputs.
+- Performance Requirements: PASS — SC-002 (≥97% test accuracy) and SC-001 (≥95% workflow success) are measurable and have explicit validation tasks.
+- Commit Control: PASS — explicit user approval gate task is required before any commit; no auto-commit.
 
 ## Project Structure
 
@@ -45,85 +46,88 @@ No constitutional violations identified.
 
 ```text
 specs/001-build-mnist-classifier/
-├── plan.md
-├── research.md
-├── data-model.md
-├── quickstart.md
-├── contracts/
-│   ├── cli.md
-│   └── docker-cli.md
-└── tasks.md
+|-- plan.md
+|-- research.md
+|-- data-model.md
+|-- quickstart.md
+|-- contracts/
+|   |-- cli.md
+|   `-- docker-cli.md
+`-- tasks.md
 ```
 
 ### Source Code (repository root)
 
 ```text
 src/
-├── __init__.py
-├── device.py
-├── data.py
-├── metrics.py
-├── model.py
-├── train.py
-└── analyze.py
+|-- __init__.py
+|-- analyze.py
+|-- data.py
+|-- device.py
+|-- metrics.py
+|-- model.py
+`-- train.py
 
 tests/
-├── unit/
-├── integration/
-└── contract/
-
-Dockerfile
-.dockerignore
-requirements.txt
-requirements-docker.txt
+|-- contract/
+|   |-- test_analyze_cli.py
+|   |-- test_docker_files.py
+|   `-- test_train_cli.py
+|-- integration/
+|   |-- test_analyze_curves.py
+|   |-- test_classification_analysis.py
+|   `-- test_train_pipeline.py
+`-- unit/
+    |-- test_analyze_classification.py
+    |-- test_analyze_curves.py
+    |-- test_data.py
+    |-- test_device.py
+    |-- test_metrics.py
+    `-- test_model.py
 ```
 
-**Structure Decision**: Keep a single-project layout with modular CLI entry points. Logging integration is implemented within `src/train.py` and `src/analyze.py` using shared formatting conventions.
+**Structure Decision**: Single Python CLI project with clear split between runtime modules (`src/`) and test layers.
 
-## Complexity Tracking
+## Phase 0: Research Summary
 
-No complexity exceptions requiring justification.
+Research decisions are documented in `specs/001-build-mnist-classifier/research.md` and resolve all prior clarifications:
+- Explicit `cpu|xpu` device contract and fail-fast behavior (Decision 1, 2)
+- Epoch and run timing persistence (Decision 3)
+- CPU vs XPU analysis outputs (Decision 4)
+- Minimal dependencies: `torch`, `torchvision`, `matplotlib`, stdlib only (Decision 5)
+- Docker CPU-only portability using `python:3.11-slim` (Decision 6)
+- CPU-only PyTorch wheel in Docker; XPU wheel on host (Decision 7)
+- Data volume mount with download fallback (Decision 8)
+- Plain-text progress logging (console + `run_<run_id>.log`) (Decision 9–12)
+- Standard run quality target >= 97% test accuracy (Decision 13)
+- FR-014 runtime validation: volume mount + download fallback each need explicit test coverage (Decision 14)
 
----
-
-## Phase 0: Research Outcomes
-
-All technical unknowns are resolved in [research.md](research.md). Key outcomes:
-
-1. Container base image remains `python:3.11-slim`.
-2. Host uses XPU wheels only for `torch` and `torchvision`; container uses CPU wheels.
-3. Data strategy remains volume mount with download fallback.
-4. Logging strategy is fixed:
-   - Destination: console + per-run file in results directory
-   - Format: plain text
-   - Granularity: concise per-epoch + lifecycle events
-   - Required per-epoch fields: `epoch`, `elapsed_seconds`, `loss`, `accuracy`
-   - File naming: `run_<run_id>.log`
+No unresolved technical clarifications remain.
 
 ## Phase 1: Design & Contracts
 
-### Data Model Updates
+Design outputs are captured in:
+- `specs/001-build-mnist-classifier/data-model.md`
+- `specs/001-build-mnist-classifier/contracts/cli.md`
+- `specs/001-build-mnist-classifier/contracts/docker-cli.md`
+- `specs/001-build-mnist-classifier/quickstart.md`
 
-- Add logging entity semantics to capture run-level and per-epoch log events.
-- Preserve compatibility with existing CSV entities; logs are supplemental observability artifacts.
+Design coverage includes:
+- Run, epoch metrics, evaluation snapshots, timing comparisons, progress-log event modeling
+- CLI argument/behavior/output contracts for training and analysis
+- Docker build/run contract for CPU-only containerized workflow
+- Data mount and download-fallback behavior explicitly described in docker-cli.md
+- Local and Docker quickstart flows aligned with module invocation (`python -m src.*`)
+- Lint/type validation instruction added to quickstart notes
 
-### Contract Updates
+## Constitution Check (Post-Design)
 
-- Update CLI contract to define module invocation (`python -m src.train`, `python -m src.analyze`).
-- Add logging behavior contract:
-  - Train and analyze both emit lifecycle log messages to console and file.
-  - Per-epoch train logs contain `epoch`, `elapsed_seconds`, `loss`, `accuracy`.
-  - Per-run log filename is `run_<run_id>.log` in `results_dir`.
+- Testing Standards: PASS — all user stories have test tasks before implementation; foundational test tasks precede implementation tasks.
+- Code Quality Standards: PASS — explicit lint/type validation task added to Polish phase.
+- UX Consistency: PASS — user-visible behavior consistent across local and Docker usage; error messages are actionable.
+- Performance Requirements: PASS — SC-001 and SC-002 both have measurable validation tasks.
+- Commit Control: PASS — T045 is a dedicated explicit user approval gate task; no task may commit without it.
 
-### Quickstart Updates
+## Complexity Tracking
 
-- Local invocations use module mode.
-- Expected outputs now include per-run plain-text log files.
-
-## Post-Design Constitution Re-Check
-
-- Testing Standards: PASS. Logging behavior can be asserted via contract tests and artifact checks.
-- Code Quality Standards: PASS. Logging approach uses stdlib and clear formatting requirements.
-- UX Consistency: PASS. Progress feedback is concise and predictable across runs.
-- Performance Requirements: PASS. Logging volume bounded to per-epoch granularity.
-- Commit Control: PASS. No commit automation introduced.
+No constitutional violations or justified complexity exceptions were required for this plan.

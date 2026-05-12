@@ -21,6 +21,7 @@
 - Q: Should logs use plain text lines or structured JSON lines? → A: Use plain text log lines.
 - Q: What minimum fields should each per-epoch log line include? → A: epoch, elapsed_seconds, loss, accuracy.
 - Q: What log file naming rule should be used for per-run logs? → A: Use `run_<run_id>.log` in the results directory.
+- Q: What minimum accuracy threshold should the trained model achieve on the MNIST test set? → A: 0.97 (97%).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -48,8 +49,8 @@ As an ML practitioner, I want to train a neural network on MNIST so that it lear
 **Acceptance Scenarios**:
 
 1. **Given** MNIST data is available, **When** the user starts training, **Then** the system trains a neural network and stores model outputs for later evaluation.
-2. **Given** both CPU and GPU are possible execution targets, **When** the user explicitly selects a target device for training or testing, **Then** the system runs only on that selected device.
-3. **Given** the user explicitly selects GPU and GPU is unavailable, **When** execution starts, **Then** the system fails with a clear device-availability error and does not switch to CPU automatically.
+2. **Given** both CPU and XPU are possible execution targets, **When** the user explicitly selects a target device for training or testing, **Then** the system runs only on that selected device.
+3. **Given** the user explicitly selects XPU and XPU is unavailable, **When** execution starts, **Then** the system fails with a clear device-availability error and does not switch to CPU automatically.
 4. **Given** a completed training run, **When** evaluation is executed, **Then** the system reports final accuracy and loss for validation and test splits.
 
 ---
@@ -86,7 +87,7 @@ As a practitioner, I want classification metrics visualizations so that I can un
 
 ### Edge Cases
 
-- What happens when GPU is unavailable or inaccessible at runtime? If GPU was explicitly selected, execution must fail with actionable guidance and must not fall back to CPU.
+- What happens when XPU is unavailable or inaccessible at runtime? If XPU was explicitly selected, execution must fail with actionable guidance and must not fall back to CPU.
 - What happens when training is interrupted before completion? Partial run logs should remain available and the interruption should be clearly reported.
 - How does the system handle corrupted or missing MNIST data files? The run must fail fast with actionable remediation guidance.
 - What happens when one or more classes are underperforming significantly? Class-level metrics should make this visible without manual post-processing.
@@ -97,7 +98,7 @@ As a practitioner, I want classification metrics visualizations so that I can un
 ### Functional Requirements
 
 - **FR-001**: System MUST train a neural network model for MNIST handwritten digit classification.
-- **FR-002**: System MUST require explicit user instruction of device target (CPU or GPU) for both training and testing execution.
+- **FR-002**: System MUST require explicit user instruction of device target (CPU or XPU) for both training and testing execution.
 - **FR-003**: System MUST split dataset usage into training, validation, and testing phases and preserve their distinct results.
 - **FR-004**: System MUST evaluate trained model performance on validation and testing data after training completes.
 - **FR-005**: System MUST record per-epoch training and validation metrics needed to generate learning curves.
@@ -124,7 +125,7 @@ As a practitioner, I want classification metrics visualizations so that I can un
 
 ### Key Entities *(include if feature involves data)*
 
-- **TrainingRun**: Represents one complete model training/evaluation attempt, including run identifier, execution target (CPU/GPU), start/end timestamps, and status.
+- **TrainingRun**: Represents one complete model training/evaluation attempt, including run identifier, execution target (CPU/XPU), start/end timestamps, and status.
 - **DatasetSplitMetrics**: Represents metrics for one split (train, validation, or test), including loss and accuracy values over epochs or final evaluation points.
 - **ModelArtifact**: Represents persisted model outputs from a run, including model version reference and associated run identifier.
 - **ClassificationReport**: Represents class-level evaluation output including precision, recall, F1-score per class, and aggregate summary values.
@@ -135,10 +136,10 @@ As a practitioner, I want classification metrics visualizations so that I can un
 ### Measurable Outcomes
 
 - **SC-001**: The primary workflow (train, evaluate, and visualize) completes successfully in at least 95% of valid runs.
-- **SC-002**: The trained model achieves at least 98% accuracy on the MNIST test set for a standard training run.
+- **SC-002**: The trained model achieves at least 97% accuracy on the MNIST test set for a standard training run.
 - **SC-003**: Train, validation, and test curves are generated for 100% of successful runs and are interpretable without additional manual processing.
 - **SC-004**: Classification report and confusion matrix are produced for 100% of successful evaluations.
-- **SC-005**: 100% of runs honor explicit device selection; zero runs auto-fallback from GPU to CPU when GPU is selected but unavailable.
+- **SC-005**: 100% of runs honor explicit device selection; zero runs auto-fallback from XPU to CPU when XPU is selected but unavailable.
 
 ## Assumptions
 

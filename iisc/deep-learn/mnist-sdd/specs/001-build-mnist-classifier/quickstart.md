@@ -2,7 +2,7 @@
 
 ## Install
 
-Install the minimal dependency set:
+Install the dependency set:
 
 ```bash
 python -m pip install -r requirements.txt
@@ -22,7 +22,7 @@ Example with custom options:
 python -m src.train -d xpu -e 20 -r ./results/xpu-run -b 64 -lr 0.001 -m ./data
 ```
 
-Run a paired CPU and XPU experiment for comparison:
+Run paired CPU and XPU experiments for comparison:
 
 ```bash
 python -m src.train -d cpu -e 10 -r ./results/cpu-run -m ./data
@@ -37,24 +37,53 @@ Generate curves and metrics from saved CSV files:
 python -m src.analyze -r ./results
 ```
 
+## Validate Standard Accuracy Target (SC-002)
+
+Check the most recent run summary row and confirm `test_accuracy >= 0.97`:
+
+```bash
+tail -n 1 ./results/run_summary.csv
+```
+
 ## Expected Outputs
 
 - CSV files with per-epoch metrics and device metadata
 - CSV files include epoch-level elapsed time and run-level training time
-- model checkpoint file
+- model checkpoint file (`model.pt`)
 - per-run plain-text log file named `run_<run_id>.log`
 - learning curve plots
 - classification metrics visualizations
 - CPU-vs-XPU quality comparison plot when both runs are available
 - CPU-vs-XPU training-time comparison plot when both runs are available
 
+## Validate Code Quality (CAR-002)
+
+Run lint and type checks on changed modules before committing:
+
+```bash
+python -m flake8 src/ tests/ --max-line-length 120
+python -m mypy src/ --ignore-missing-imports
+```
+
+## Validate SC-001 Reliability (≥95% success)
+
+Run the primary workflow 3 times and confirm all succeed:
+
+```bash
+for i in 1 2 3; do
+  python -m src.train -d cpu -e 10 -r ./results/reliability-run-$i -m ./data
+done
+```
+
+All three should exit 0 and produce model.pt and metrics CSVs.
+
 ## Notes
 
-- Device selection is explicit; the scripts must not switch devices automatically.
-- In this environment, `xpu` is the integrated laptop GPU target.
+- Device selection is explicit; scripts do not switch devices automatically.
+- In this environment, `xpu` is the integrated GPU target; `cpu` is always available.
 - If `xpu` is requested and unavailable, execution fails with a clear error.
-- The default dataset directory is `./data`.
-- Keep results in separate directories per run to avoid overwriting CSV outputs.
+- Default dataset directory is `./data`.
+- Keep results in separate directories per run to avoid CSV overwrite.
 
 ---
 
@@ -66,13 +95,13 @@ python -m src.analyze -r ./results
 docker build -t mnist-classifier .
 ```
 
-### Train (default — CPU, volumes mounted from host)
+### Train (default)
 
 ```bash
 docker run --rm \
-	-v "$(pwd)/data:/app/data" \
-	-v "$(pwd)/results:/app/results" \
-	mnist-classifier
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/results:/app/results" \
+  mnist-classifier
 ```
 
 MNIST data is downloaded automatically if `/app/data` is empty or not mounted.
@@ -81,28 +110,28 @@ MNIST data is downloaded automatically if `/app/data` is empty or not mounted.
 
 ```bash
 docker run --rm \
-	-v "$(pwd)/data:/app/data" \
-	-v "$(pwd)/results:/app/results" \
-	mnist-classifier --epochs 20 --batch 128 --lr 0.001
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/results:/app/results" \
+  mnist-classifier --epochs 20 --batch 128 --lr 0.001
 ```
 
 ### Run analysis
 
 ```bash
 docker run --rm \
-	-v "$(pwd)/results:/app/results" \
-	--entrypoint python mnist-classifier \
-	-m src.analyze --results /app/results
+  -v "$(pwd)/results:/app/results" \
+  --entrypoint python mnist-classifier \
+  -m src.analyze --results /app/results
 ```
 
-### Run full test suite inside container
+### Run tests inside container
 
 ```bash
 docker run --rm mnist-classifier pytest tests/ -v
 ```
 
-### Notes
+### Docker Notes
 
-- The container runs CPU only; `--device xpu` will fail with a clear error inside Docker.
-- Results written to `/app/results` are only persisted if a host volume is mounted.
-- XPU experiments must be run directly on the host using `requirements.txt`.
+- The container is CPU-only; `--device xpu` fails fast inside Docker.
+- Results in `/app/results` persist only when a host volume is mounted.
+- XPU experiments must be run directly on host using `requirements.txt`.

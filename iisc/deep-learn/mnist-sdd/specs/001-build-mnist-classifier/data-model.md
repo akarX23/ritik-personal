@@ -13,7 +13,7 @@ Fields:
 - `start_time`: run start timestamp
 - `end_time`: run end timestamp
 - `training_time_seconds`: total elapsed training time in seconds
-- `status`: running, completed, or failed
+- `status`: `running`, `completed`, or `failed`
 - `results_dir`: output directory for artifacts
 
 ### EpochMetrics
@@ -23,7 +23,7 @@ Represents per-epoch measurements for a specific run and split.
 Fields:
 - `run_id`: parent run identifier
 - `epoch`: epoch number
-- `split`: train, validation, or test
+- `split`: `train`, `validation`, or `test`
 - `loss`: scalar loss value
 - `accuracy`: scalar accuracy value
 - `elapsed_seconds`: epoch duration
@@ -36,7 +36,7 @@ Represents a validation or test checkpoint captured during training.
 Fields:
 - `run_id`: parent run identifier
 - `epoch`: checkpoint epoch number
-- `split`: validation or test
+- `split`: `validation` or `test`
 - `loss`: scalar loss value
 - `accuracy`: scalar accuracy value
 - `elapsed_seconds`: evaluation duration for the snapshot
@@ -85,13 +85,24 @@ Fields:
 - `run_id`: parent run identifier
 - `timestamp`: event timestamp
 - `level`: log level (`INFO`, `WARNING`, `ERROR`)
-- `event_type`: lifecycle or epoch
+- `event_type`: `lifecycle` or `epoch`
 - `message`: plain-text log line content
 - `epoch`: optional epoch index (required for epoch events)
 - `elapsed_seconds`: optional elapsed time for epoch events
 - `loss`: optional loss value for epoch events
 - `accuracy`: optional accuracy value for epoch events
 - `log_file`: path to `run_<run_id>.log`
+
+### ContainerConfig
+
+Represents the runtime configuration for a containerized invocation.
+
+Fields:
+- `base_image`: Docker base image tag (for example `python:3.11-slim`)
+- `device`: always `cpu` inside container; no XPU/GPU driver dependencies included
+- `data_mount`: optional host path bound to `/app/data` inside the container
+- `results_mount`: optional host path bound to `/app/results` inside the container
+- `download_fallback`: boolean; if `true`, torchvision downloads MNIST when `/app/data` is empty
 
 ## Relationships
 
@@ -100,32 +111,18 @@ Fields:
 - One `TrainingRun` has one `ClassificationReport` and one `ConfusionMatrix` after testing.
 - One `DeviceTimeComparison` references two `TrainingRun` records (`cpu` and `xpu`).
 - One `TrainingRun` has many `ProgressLogEvent` records.
-- `analysis.py` consumes the persisted CSV outputs derived from these entities.
+- `analyze.py` consumes the persisted CSV outputs derived from these entities.
 
 ## Validation Rules
 
 - `device` must be explicitly set to `cpu` or `xpu`.
 - `epoch` values are positive integers.
-- `loss` and `accuracy` are numeric scalars saved with consistent column names across CSV files.
+- `loss` and `accuracy` are numeric scalars with stable CSV column names.
 - `elapsed_seconds` and `training_time_seconds` are non-negative numeric values.
 - `speedup_ratio` is computed only when `xpu_training_time_seconds > 0`.
 - `labels` must cover the 10 MNIST classes.
 - Visualization inputs must exist before analysis runs.
 - Per-epoch log events must include `epoch`, `elapsed_seconds`, `loss`, and `accuracy`.
 - Log file name must match `run_<run_id>.log`.
-
-### ContainerConfig
-
-Represents the runtime configuration for a containerised invocation.
-
-Fields:
-- `base_image`: Docker base image tag (e.g., `python:3.11-slim`)
-- `device`: always `cpu` inside container; no XPU/GPU driver deps included
-- `data_mount`: optional host path bound to `/app/data` inside the container
-- `results_mount`: optional host path bound to `/app/results` inside the container
-- `download_fallback`: boolean; if `true`, torchvision downloads MNIST when `/app/data` is empty
-
-Validation Rules:
-- `device` inside container is always `cpu`; any other value is rejected at runtime by `src.device`
-- `data_mount` is optional; when absent, `download_fallback` must be `true`
-- `results_mount` should be provided to persist output beyond container lifetime
+- Standard run test accuracy target for acceptance is `>= 0.97` (SC-002).
+- Container `device` is always `cpu`; any unsupported device request fails fast.

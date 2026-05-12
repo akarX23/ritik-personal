@@ -2,7 +2,7 @@
 
 ## `python -m src.train`
 
-Purpose: train the MNIST model, run scheduled validation/testing, and write metrics CSV files.
+Purpose: Train the MNIST model, run scheduled validation/testing, and write metrics CSV files.
 
 Arguments:
 - `-e` or `--epochs`: number of training epochs, default `10`
@@ -20,6 +20,7 @@ Behavior:
 - Emits plain-text progress logs to console and to `<results_dir>/run_<run_id>.log`.
 - Emits concise per-epoch log lines with `epoch`, `elapsed_seconds`, `loss`, and `accuracy`.
 - Fails if the requested device is unavailable (no automatic fallback).
+- Uses SC-002 baseline where a standard run is expected to reach test accuracy `>= 0.97`.
 
 Outputs:
 - `metrics_train.csv`
@@ -32,7 +33,7 @@ Outputs:
 
 ## `python -m src.analyze`
 
-Purpose: generate curves and comparisons from saved CSV outputs.
+Purpose: Generate curves and comparisons from saved CSV outputs.
 
 Arguments:
 - `-r` or `--results`: results directory, required

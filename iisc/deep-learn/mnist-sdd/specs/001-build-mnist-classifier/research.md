@@ -5,94 +5,110 @@
 - Decision: Expose device contract as `cpu` or `xpu`, where XPU represents the integrated laptop GPU.
 - Rationale: The runtime environment does not provide CUDA GPU detection, and user intent is explicit CPU/XPU testing.
 - Alternatives considered:
-	- `cpu|gpu` generic naming: rejected because it does not match runtime behavior.
-	- Automatic fallback from `xpu` to `cpu`: rejected by explicit no-fallback requirement.
+  - `cpu|gpu` generic naming: rejected because it does not match runtime behavior.
+  - Automatic fallback from `xpu` to `cpu`: rejected by explicit no-fallback requirement.
 
 ## Decision 2: Use PyTorch XPU availability checks, not CUDA checks
 
-- Decision: Device validation logic will use XPU capability checks through PyTorch XPU APIs.
+- Decision: Device validation logic uses XPU capability checks through PyTorch XPU APIs.
 - Rationale: CUDA checks are irrelevant in this environment and would produce misleading behavior.
 - Alternatives considered:
-	- `torch.cuda.is_available()`: rejected because CUDA/GPU is not detected here.
-	- Silent fallback if XPU unavailable: rejected due to fail-fast policy.
+  - `torch.cuda.is_available()`: rejected because CUDA/GPU is not detected here.
+  - Silent fallback if XPU unavailable: rejected due to fail-fast policy.
 
 ## Decision 3: Persist both per-epoch and run-level timing in CSV
 
 - Decision: Record `elapsed_seconds` per epoch and `training_time_seconds` per run in CSV artifacts.
 - Rationale: The feature requires reproducible, quantitative CPU vs XPU time comparison.
 - Alternatives considered:
-	- Logging only per-epoch time: rejected because total-run comparison becomes indirect.
-	- Logging only total time: rejected because epoch-level diagnostics are needed for curve interpretation.
+  - Logging only per-epoch time: rejected because total-run comparison becomes indirect.
+  - Logging only total time: rejected because epoch-level diagnostics are needed for curve interpretation.
 
-## Decision 4: Analysis must include CPU vs XPU time comparison
+## Decision 4: Analysis includes CPU vs XPU time comparison
 
 - Decision: `analyze.py` generates a dedicated timing comparison output when both CPU and XPU run summaries are available.
-- Rationale: Time comparison is now a first-class requirement alongside quality metrics.
+- Rationale: Time comparison is a first-class requirement alongside quality metrics.
 - Alternatives considered:
-	- Manual spreadsheet comparison: rejected as non-reproducible workflow.
-	- Console-only timing output: rejected because visual outputs are required for reporting.
+  - Manual spreadsheet comparison: rejected as non-reproducible workflow.
+  - Console-only timing output: rejected because visual outputs are required for reporting.
 
 ## Decision 5: Keep dependencies minimal
 
-- Decision: Use `torch`, `torchvision`, `matplotlib`, and stdlib `csv`.
-- Rationale: Minimal dependencies simplify setup and keep the project aligned with the existing plan.
+- Decision: Use `torch`, `torchvision`, `matplotlib`, and stdlib `csv`/`logging`.
+- Rationale: Minimal dependencies simplify setup and keep the project aligned with required outputs.
 - Alternatives considered:
-	- Pandas/seaborn: rejected as unnecessary for required outputs.
-	- Additional experiment trackers: rejected as out of local-scope workflow.
+  - Pandas/seaborn: rejected as unnecessary for required outputs.
+  - External experiment trackers: rejected as out of scope.
 
-## Decision 6: Containerise with `python:3.11-slim` base image
+## Decision 6: Containerize with `python:3.11-slim`
 
 - Decision: Use `python:3.11-slim` as the Docker base image.
-- Rationale: `slim` removes non-essential OS packages (docs, man pages, apt cache) while keeping glibc and pip, which are required for PyTorch wheel installation. Alpine would require building PyTorch from source due to musl libc incompatibility.
+- Rationale: `slim` minimizes image footprint while keeping glibc and pip needed for PyTorch wheels.
 - Alternatives considered:
-	- `python:3.11-alpine`: rejected — musl libc incompatible with pre-built PyTorch wheels; requires full build toolchain, inflating image more than `slim`.
-	- `python:3.11` (full Debian): rejected — unnecessarily large; `slim` is sufficient.
-	- `ubuntu:22.04` + manual Python install: rejected — more Dockerfile complexity; no benefit over official Python image.
+  - `python:3.11-alpine`: rejected due to musl/PyTorch wheel incompatibility.
+  - `python:3.11` full image: rejected as larger than needed.
 
-## Decision 7: Install CPU-only PyTorch wheel inside Docker; keep XPU wheel for host only
+## Decision 7: Install CPU-only PyTorch in Docker; keep XPU wheel for host
 
-- Decision: Inside the Dockerfile, install `torch` and `torchvision` from `https://download.pytorch.org/whl/cpu`. On the host, `requirements.txt` installs `torch` and `torchvision` from the XPU nightly index, scoped per-package.
-- Rationale: XPU passthrough inside Docker is not supported (requires kernel-level device access and Intel GPU userspace drivers that inflate image and break portability). CPU-only wheel is significantly smaller (~700 MB vs ~1.4 GB for XPU nightly). `requirements.txt` must not apply `--index-url` globally or it would route `matplotlib` and `pytest` through the XPU nightly index unnecessarily.
+- Decision: Docker installs `torch`/`torchvision` from the CPU index; host installs from XPU index with per-package scoping.
+- Rationale: Docker is CPU-only by requirement; per-package index scoping avoids misrouting non-PyTorch dependencies.
 - Alternatives considered:
-	- Single `requirements.txt` with global `--index-url`: rejected — applies XPU index to all packages including `matplotlib` and `pytest` which have no XPU-specific versions and may fail or silently install wrong wheels.
-	- Separate `requirements-host.txt` and `requirements-docker.txt`: evaluated — opted for per-package `--index-url` in `requirements.txt` for host, and a separate `requirements-docker.txt` (containing only `matplotlib` and `pytest`) used by the Dockerfile.
+  - Global `--index-url` in `requirements.txt`: rejected because it can route unrelated packages incorrectly.
+  - Single host+docker requirements file: rejected to keep environment contracts explicit.
 
-## Decision 8: Data provisioning — volume mount with download fallback
+## Decision 8: Data provisioning uses mount-first plus download fallback
 
-- Decision: The Dockerfile declares `/app/data` as a `VOLUME`. When the user mounts `./data:/app/data`, torchvision uses pre-existing files. When no volume is mounted, `torchvision.datasets.MNIST(download=True)` fetches the dataset automatically at runtime.
-- Rationale: Baking the 11 MB dataset into the image adds unnecessary layer size and requires the data to exist at build time. A volume mount is the standard Docker pattern for mutable data. The download fallback keeps the image self-contained for CI and first-run scenarios.
+- Decision: Use `/app/data` volume mount when provided, otherwise allow torchvision download fallback.
+- Rationale: Avoids baking dataset into image and supports first-run/CI usage.
 - Alternatives considered:
-	- Bake dataset into image via `COPY data/`: rejected — inflates image; fails if data not present at build time.
-	- Require volume mount with no fallback: rejected — breaks CI and first-run user experience.
+  - Bake dataset into image: rejected due to image bloat and build-time coupling.
+  - Require volume always: rejected due to weaker first-run ergonomics.
 
-## Decision 9: Progress logging destination — console plus per-run file
+## Decision 9: Progress logging destination is console plus per-run file
 
-- Decision: Emit progress logs to both console and a per-run log file in the selected results directory.
-- Rationale: Console output provides live visibility, while file output provides durable run diagnostics for troubleshooting and reproducibility.
+- Decision: Emit progress logs to both console and a per-run log file in `results_dir`.
+- Rationale: Console gives live feedback; files preserve history for reproducibility.
 - Alternatives considered:
-	- Console-only logging: rejected — no retained history after process exit.
-	- File-only logging: rejected — weak interactive feedback during long runs.
+  - Console-only: rejected (no durable logs).
+  - File-only: rejected (weak real-time feedback).
 
-## Decision 10: Plain-text concise per-epoch log format
+## Decision 10: Use plain-text concise per-epoch logs
 
-- Decision: Use plain-text log lines with concise per-epoch entries and lifecycle events.
-- Rationale: Human-readable logs match CLI-first usage and are easier to inspect quickly during experiments.
+- Decision: Use plain-text log lines with concise per-epoch entries plus lifecycle events.
+- Rationale: Human-readable logs suit CLI workflows and keep noise low.
 - Alternatives considered:
-	- JSON logs: rejected — more parsing overhead and unnecessary complexity for current scope.
-	- Per-batch logs: rejected — too verbose, higher I/O overhead, and reduced readability.
+  - JSON logs: rejected as unnecessary complexity for current scope.
+  - Per-batch logs: rejected as too verbose.
 
 ## Decision 11: Mandatory per-epoch log fields
 
-- Decision: Each per-epoch log line must include `epoch`, `elapsed_seconds`, `loss`, and `accuracy`.
-- Rationale: These fields provide minimal but sufficient progress and quality signals aligned with existing CSV metrics.
+- Decision: Each per-epoch log line includes `epoch`, `elapsed_seconds`, `loss`, and `accuracy`.
+- Rationale: These are the minimal fields needed for progress and quality visibility.
 - Alternatives considered:
-	- Epoch-only logs: rejected — insufficient training quality visibility.
-	- Expanded fields on every line (device, LR, batch size): rejected — redundant/noisy for concise logs.
+  - Epoch-only logs: rejected as insufficient.
+  - Expanded full-context logs each epoch: rejected as noisy.
 
 ## Decision 12: Per-run log file naming
 
-- Decision: Name each run log file as `run_<run_id>.log` within `results_dir`.
-- Rationale: Stable deterministic naming avoids collisions and aligns logs with other run-scoped artifacts.
+- Decision: Name each run log file `run_<run_id>.log` in `results_dir`.
+- Rationale: Deterministic naming maps logs directly to run artifacts.
 - Alternatives considered:
-	- Single rolling `training.log`: rejected — mixed runs reduce traceability.
-	- Timestamp-only names: rejected — harder to correlate directly with run IDs.
+  - Single shared `training.log`: rejected due to mixed-run ambiguity.
+  - Timestamp-only naming: rejected due to weaker run linkage.
+
+## Decision 13: Standard run quality threshold is 97% test accuracy
+
+- Decision: Set SC-002 baseline to `>= 97%` test accuracy for standard training runs.
+- Rationale: Updated clarification defines the target and aligns acceptance criteria with expected baseline.
+- Alternatives considered:
+  - Keep `>= 98%`: rejected by latest clarification.
+  - Lower than `>= 97%`: rejected because it weakens quality expectations without need.
+
+
+## Decision 14: FR-014 data provisioning requires two explicit runtime validation paths
+
+- Decision: Add contract/integration tests that verify (a) mounted-data path where torchvision reads pre-existing MNIST files and (b) no-mount/download-fallback path where torchvision fetches MNIST automatically.
+- Rationale: Volume mount is the primary expected usage; download fallback is a required safety contract. Neither can be verified purely via static code review.
+- Alternatives considered:
+  - Single test covering only the download path: rejected — leaves mount path and fallback-only behavior unvalidated.
+  - Manual verification step only: rejected — not reproducible and not aligned with test-first requirements.

@@ -4,132 +4,155 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 # Tasks: MNIST Digit Classifier Pipeline
 
-**Input**: Design documents from `/specs/001-build-mnist-classifier/`  
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/cli.md, contracts/docker-cli.md
+**Input**: Design documents from /specs/001-build-mnist-classifier/  
+**Prerequisites**: plan.md (required), spec.md (required), research.md, data-model.md, contracts/, quickstart.md
 
-**Tests**: Test tasks are REQUIRED by this feature's test-first requirements.  
-**Organization**: Tasks are grouped by user story so each story remains independently testable.
-
-## Format: `[ID] [P?] [Story] Description`
-
-- [P] indicates parallelizable work (different files, no blocking dependency)
-- [Story] label is required for user story phases only (`[US1]`, `[US2]`, `[US3]`)
-- Every task includes an exact file path
+**Tests**: Test tasks are mandatory. Constitution requires test-first: every test task precedes its implementation task.
+**Organization**: Tasks grouped by user story so each story is independently implementable and testable.
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Align dependency and project scaffolding with current plan/contracts.
+**Purpose**: Align project scaffolding, dependency definitions, and baseline test layout.
 
-- [ ] T001 Update host dependencies in `requirements.txt` to keep XPU wheel index scoped to `torch` and `torchvision` only
-- [ ] T002 [P] Ensure docker runtime dependencies in `requirements-docker.txt` include non-torch packages only (`matplotlib`, `pytest`)
-- [ ] T003 [P] Ensure root ignore rules in `.gitignore` and `.dockerignore` are aligned with data/results/model/log artifacts
-- [ ] T004 Verify package entrypoint markers in `src/__init__.py` and `tests/__init__.py` for module execution support
-
----
-
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Shared behavior required by all stories before feature work.
-
-**CRITICAL**: No user story implementation begins until this phase is complete.
-
-- [ ] T005 Implement/confirm explicit device resolution contract (`cpu` or `xpu`) with fail-fast behavior in `src/device.py`
-- [ ] T006 [P] Implement/confirm MNIST loader split behavior and defaults in `src/data.py`
-- [ ] T007 [P] Implement/confirm CSV writer schemas in `src/metrics.py` including timing fields and run summary fields
-- [ ] T008 Add shared logging setup helper for plain-text console + file logging in `src/train.py`
-- [ ] T009 Add deterministic per-run log naming (`run_<run_id>.log`) integration with run identifiers in `src/train.py`
-
-**Checkpoint**: Foundational runtime, metrics, and logging primitives are ready.
+- [ ] T001 Align host dependencies for XPU host runtime in requirements.txt
+- [ ] T002 [P] Align container dependency list in requirements-docker.txt
+- [ ] T003 [P] Align docker build context exclusions in .dockerignore
+- [ ] T004 [P] Align repository ignore patterns for artifacts in .gitignore
+- [ ] T005 Verify package entrypoint marker for module execution in src/__init__.py
+- [ ] T006 Verify test package marker for module-based test discovery in tests/__init__.py
 
 ---
 
-## Phase 3: User Story 1 - Train a Reliable MNIST Classifier (Priority: P1) 🎯 MVP
+## Phase 2: Foundational Tests (Test-First Gate)
 
-**Goal**: Train MNIST reliably with explicit device selection, persisted artifacts, and concise progress logging.
+**Purpose**: Write tests for all shared runtime contracts BEFORE any implementation starts.
 
-**Independent Test**: Run one CPU training cycle with module invocation and verify model/checkpoint/CSV/log artifacts plus fail-fast invalid device behavior.
+**CRITICAL (constitution §I)**: These tests must be written and confirmed to FAIL before Phase 3 implementation tasks begin.
 
-### Tests for User Story 1 (REQUIRED)
+- [ ] T007 [P] Write unit tests for explicit cpu/xpu validation and fail-fast no-fallback behavior in tests/unit/test_device.py
+- [ ] T008 [P] Write unit tests for MNIST loader split sizes, DataLoader return types, and deterministic seeding in tests/unit/test_data.py
+- [ ] T009 [P] Write unit tests for CSV schema columns, append behavior, and timing fields in tests/unit/test_metrics.py
+- [ ] T010 Write contract test asserting run-id is stable string and log filename matches run_<run_id>.log pattern in tests/contract/test_train_cli.py
+- [ ] T011 Write contract test for console + file log output with required epoch fields (epoch, elapsed_seconds, loss, accuracy) in tests/contract/test_train_cli.py
 
-- [ ] T010 [P] [US1] Add unit tests for model forward shape and deterministic behavior in `tests/unit/test_model.py`
-- [ ] T011 [P] [US1] Add unit tests for explicit device validation and no-fallback behavior in `tests/unit/test_device.py`
-- [ ] T012 [P] [US1] Add unit tests for metrics CSV schema writing in `tests/unit/test_metrics.py`
-- [ ] T013 [P] [US1] Add contract tests for `python -m src.train` CLI arguments and required `--device` in `tests/contract/test_train_cli.py`
-- [ ] T014 [P] [US1] Add integration test for one-epoch train run artifact generation in `tests/integration/test_train_pipeline.py`
-- [ ] T015 [P] [US1] Add integration/contract test for training log behavior (console+file, required epoch fields, file naming) in `tests/contract/test_train_cli.py`
+**Checkpoint**: All foundational tests written and confirmed failing — implementation may begin.
+
+---
+
+## Phase 3: Foundational Implementation (Blocking Prerequisites)
+
+**Purpose**: Implement the shared runtime contracts the tests above target.
+
+- [ ] T012 Implement explicit cpu/xpu validation and fail-fast device checks in src/device.py
+- [ ] T013 [P] Implement MNIST loading and train/validation/test split behavior in src/data.py
+- [ ] T014 [P] Implement stable CSV schemas including timing fields in src/metrics.py
+- [ ] T015 Add run-id generation and reusable log filename wiring in src/metrics.py
+- [ ] T016 Implement shared plain-text logger setup (console plus file) in src/train.py
+- [ ] T017 Implement reusable run log naming pattern run_<run_id>.log in src/train.py
+
+**Checkpoint**: Foundation complete — foundational tests now pass — user stories can proceed.
+
+---
+
+## Phase 4: User Story 1 — Train a Reliable MNIST Classifier (Priority: P1) 🎯 MVP
+
+**Goal**: Train and evaluate MNIST with explicit device control, persisted artifacts, and concise per-epoch progress logs.
+
+**Independent Test**: Run one training cycle via module invocation and confirm model, CSV, and log outputs plus fail-fast device behavior.
+
+### Tests for User Story 1 (MANDATORY — write before implementation)
+
+- [ ] T018 [P] [US1] Add unit tests for model tensor shape and determinism in tests/unit/test_model.py
+- [ ] T019 [P] [US1] Add contract tests for train CLI argument contract and required --device in tests/contract/test_train_cli.py
+- [ ] T020 [P] [US1] Add integration smoke test for train artifact generation (CSV, model.pt, log file) in tests/integration/test_train_pipeline.py
+- [ ] T021 [P] [US1] Add contract assertions for per-epoch log fields and run_<run_id>.log file naming in tests/contract/test_train_cli.py
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Implement/confirm MNIST classifier architecture `784->256->128->10` in `src/model.py`
-- [ ] T017 [US1] Implement/confirm training CLI parser and module entrypoint behavior in `src/train.py`
-- [ ] T018 [US1] Implement/confirm training epoch loop, optimizer/loss flow, and per-epoch metrics persistence in `src/train.py`
-- [ ] T019 [US1] Implement/confirm validation/test checkpoint evaluation during training and CSV persistence in `src/train.py`
-- [ ] T020 [US1] Implement concise per-epoch progress log lines with `epoch`, `elapsed_seconds`, `loss`, `accuracy` in `src/train.py`
-- [ ] T021 [US1] Implement lifecycle logging (run start/end, evaluation, checkpoint, errors) to console and `run_<run_id>.log` in `src/train.py`
-- [ ] T022 [US1] Implement/confirm `run_summary.csv` final write with `training_time_seconds` and final metrics plus model checkpoint save in `src/train.py`
+- [ ] T022 [US1] Implement fixed MLP architecture 784->256->128->10 in src/model.py
+- [ ] T023 [US1] Implement train CLI parser and module entrypoint behavior in src/train.py
+- [ ] T024 [US1] Implement training loop with optimizer/loss and per-epoch metrics writes in src/train.py
+- [ ] T025 [US1] Implement periodic validation and test snapshot persistence in src/train.py
+- [ ] T026 [US1] Implement concise per-epoch log line with epoch/elapsed_seconds/loss/accuracy in src/train.py
+- [ ] T027 [US1] Implement run summary persistence with training_time_seconds and checkpoint save in src/train.py
 
-**Checkpoint**: User Story 1 is independently runnable and testable (MVP).
+**Checkpoint**: User Story 1 is independently complete and demoable (MVP).
 
 ---
 
-## Phase 4: User Story 2 - Visualize Learning Curves (Priority: P2)
+## Phase 5: User Story 2 — Visualize Learning Curves (Priority: P2)
 
-**Goal**: Produce learning and device/time comparison plots from persisted run outputs with clear analysis lifecycle logs.
+**Goal**: Generate train/validation/test curves and CPU-vs-XPU quality/time comparison outputs.
 
-**Independent Test**: Execute analysis on fixture and smoke-run results; verify required plot files and log behavior.
+**Independent Test**: Run analysis on prepared metrics and verify required plot files are generated.
 
-### Tests for User Story 2 (REQUIRED)
+### Tests for User Story 2 (MANDATORY — write before implementation)
 
-- [ ] T023 [P] [US2] Add contract tests for `python -m src.analyze` required args and missing-results errors in `tests/contract/test_analyze_cli.py`
-- [ ] T024 [P] [US2] Add unit tests for learning curve generation from synthetic CSV data in `tests/unit/test_analyze_curves.py`
-- [ ] T025 [P] [US2] Add integration test for end-to-end curve generation from fixture results in `tests/integration/test_analyze_curves.py`
-- [ ] T026 [P] [US2] Add tests for analysis lifecycle logging to console + `run_<run_id>.log` in `tests/contract/test_analyze_cli.py`
+- [ ] T028 [P] [US2] Add contract tests for analyze CLI required arguments and missing-results error in tests/contract/test_analyze_cli.py
+- [ ] T029 [P] [US2] Add unit tests for learning-curve plot generation from synthetic CSV in tests/unit/test_analyze_curves.py
+- [ ] T030 [P] [US2] Add integration tests for end-to-end curve rendering from fixture results in tests/integration/test_analyze_curves.py
+- [ ] T031 [P] [US2] Add contract assertions for analysis lifecycle logging behavior in tests/contract/test_analyze_cli.py
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] Implement/confirm analyze CLI parser and entrypoint for module invocation in `src/analyze.py`
-- [ ] T028 [P] [US2] Implement/confirm learning curve plot generation in `src/analyze.py`
-- [ ] T029 [P] [US2] Implement/confirm CPU-vs-XPU quality comparison plot generation in `src/analyze.py`
-- [ ] T030 [US2] Implement/confirm CPU-vs-XPU training time comparison plot generation in `src/analyze.py`
-- [ ] T031 [US2] Implement lifecycle logging to console and per-run log file for analysis workflow in `src/analyze.py`
+- [ ] T032 [US2] Implement analyze CLI parser and execution entrypoint in src/analyze.py
+- [ ] T033 [P] [US2] Implement train/validation/test learning curve plots in src/analyze.py
+- [ ] T034 [P] [US2] Implement CPU-vs-XPU quality comparison plot generation in src/analyze.py
+- [ ] T035 [US2] Implement CPU-vs-XPU training time comparison plot generation in src/analyze.py
+- [ ] T036 [US2] Implement analysis lifecycle logging to console and run log file in src/analyze.py
 
-**Checkpoint**: User Story 2 works independently with fixture data and real run outputs.
+**Checkpoint**: User Story 2 is independently complete using fixture or real metrics.
 
 ---
 
-## Phase 5: User Story 3 - Analyze Classification Quality (Priority: P3)
+## Phase 6: User Story 3 — Analyze Classification Quality (Priority: P3)
 
-**Goal**: Generate confusion matrix and class-wise precision/recall/F1 visualizations from test predictions.
+**Goal**: Produce confusion matrix and class-wise precision/recall/F1 visualizations from prediction artifacts.
 
-**Independent Test**: Run classification analysis against fixture and real predictions; verify plot outputs and dependency errors.
+**Independent Test**: Run analysis on predictions fixture and verify both classification outputs are created.
 
-### Tests for User Story 3 (REQUIRED)
+### Tests for User Story 3 (MANDATORY — write before implementation)
 
-- [ ] T032 [P] [US3] Add unit tests for confusion matrix plot generation in `tests/unit/test_analyze_classification.py`
-- [ ] T033 [P] [US3] Add unit tests for classification report plot generation in `tests/unit/test_analyze_classification.py`
-- [ ] T034 [P] [US3] Add integration test for classification analysis from predictions fixture in `tests/integration/test_classification_analysis.py`
+- [ ] T037 [P] [US3] Add unit tests for confusion-matrix output generation in tests/unit/test_analyze_classification.py
+- [ ] T038 [P] [US3] Add unit tests for classification-report visualization output in tests/unit/test_analyze_classification.py
+- [ ] T039 [P] [US3] Add integration test for classification analysis workflow in tests/integration/test_classification_analysis.py
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] Implement/confirm test prediction export (`predictions.csv`) in `src/train.py`
-- [ ] T036 [P] [US3] Implement/confirm confusion matrix plot generation in `src/analyze.py`
-- [ ] T037 [P] [US3] Implement/confirm classification report plot generation in `src/analyze.py`
-- [ ] T038 [US3] Implement/confirm missing-predictions dependency error handling in `src/analyze.py`
+- [ ] T040 [US3] Implement prediction export for final test pass (predictions.csv) in src/train.py
+- [ ] T041 [P] [US3] Implement confusion matrix plotting from predictions.csv in src/analyze.py
+- [ ] T042 [P] [US3] Implement class-wise precision/recall/F1 report plotting in src/analyze.py
+- [ ] T043 [US3] Implement missing-input dependency error handling for classification analysis in src/analyze.py
 
-**Checkpoint**: User Story 3 is independently testable and complete.
+**Checkpoint**: User Story 3 is independently complete and testable.
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Containerization, docs alignment, validation, and release gates.
+**Purpose**: Finalize container contract, code quality gates, docs, acceptance validation, and commit-gate controls.
 
-- [ ] T039 [P] Align Docker image build/runtime contract in `Dockerfile` with CPU-only wheel source and module entrypoint
-- [ ] T040 [P] Add/confirm Docker contract tests for support files and directives in `tests/contract/test_docker_files.py`
-- [ ] T041 Update quickstart examples and outputs (module invocation + logging artifact expectations) in `specs/001-build-mnist-classifier/quickstart.md`
-- [ ] T042 Validate quickstart scenarios end-to-end (host train/analyze and docker train/analyze commands)
-- [ ] T043 [P] Verify standard run target `>= 0.98` test accuracy and timing/log fields in `results/*/run_summary.csv` and `results/*/run_<run_id>.log`
-- [ ] T044 Request explicit user approval before any commit operation for these changes
+### Container Coverage (FR-013, FR-014)
+
+- [ ] T044 [P] Align CPU-only container build/runtime contract in Dockerfile
+- [ ] T045 [P] Add or update docker contract coverage for support files in tests/contract/test_docker_files.py
+- [ ] T046 [P] Add integration test for FR-014 mounted-data path: verify torchvision reads existing files when /app/data is mounted in tests/integration/test_train_pipeline.py
+- [ ] T047 [P] Add integration test for FR-014 download-fallback path: verify torchvision auto-downloads when data dir is absent in tests/integration/test_train_pipeline.py
+- [ ] T048 Add integration test for full container workflow execution (train + analyze + verify artifacts) in tests/contract/test_docker_files.py
+
+### Code Quality Gate (CAR-002, constitution §II)
+
+- [ ] T049 Run lint and static analysis on all changed files in src/ and tests/ and confirm zero violations
+
+### Acceptance Validation (SC-001, SC-002)
+
+- [ ] T050 Verify SC-002: standard CPU run achieves test accuracy >= 0.97 using results/standard-cpu/run_summary.csv
+- [ ] T051 Verify SC-001: repeat primary workflow N=3 times and confirm all succeed (>=95% pass rate baseline)
+- [ ] T052 Validate quickstart host and container flow examples and expected output list in specs/001-build-mnist-classifier/quickstart.md
+
+### Commit Gate (FR-012, CAR-005, constitution §V — MANDATORY)
+
+- [ ] T053 Request explicit user approval before any commit; present change summary and validation results
 
 ---
 
@@ -137,90 +160,80 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ### Phase Dependencies
 
-- Phase 1 (Setup): no dependencies
-- Phase 2 (Foundational): depends on Phase 1; blocks all user stories
-- Phase 3 (US1): depends on Phase 2
-- Phase 4 (US2): depends on Phase 2 and US1 artifact contracts
-- Phase 5 (US3): depends on Phase 2 and US1 predictions export contract
-- Phase 6 (Polish): depends on completion of user stories
+- Phase 1 (Setup): no dependencies.
+- Phase 2 (Foundational Tests): depends on Phase 1; BLOCKS Phase 3 implementation.
+- Phase 3 (Foundational Implementation): depends on Phase 2 tests failing; BLOCKS all stories.
+- Phase 4 (US1): depends on Phase 3.
+- Phase 5 (US2): depends on Phase 3 and run metrics contracts.
+- Phase 6 (US3): depends on Phase 3 and predictions contract.
+- Phase 7 (Polish): depends on completion of selected stories.
+- T053 (Commit Gate): must be the last task before any commit is made.
 
 ### User Story Dependencies
 
-- US1 (P1): first deliverable (MVP), independent after foundational work
-- US2 (P2): independent with fixture data, integrates with US1 outputs for full workflow
-- US3 (P3): independent with fixture predictions, integrates with US1 outputs for full workflow
+- US1 (P1): independent after foundational work; defines MVP.
+- US2 (P2): independent with fixture data; full value when US1 outputs are present.
+- US3 (P3): independent with fixture predictions; full value when US1 outputs are present.
 
 ### Within Each User Story
 
-- Tests are written before implementation
-- CLI/contract behavior is established before integration flow checks
-- Core artifact generation precedes analysis/visualization features
+- Write tests first and ensure they fail before implementation.
+- Implement core generation paths before analysis/visualization layers.
+- Complete story-scoped validations before moving to lower-priority stories.
 
 ### Parallel Opportunities
 
-- Setup: T002, T003, T004 can run in parallel
-- Foundational: T006 and T007 can run in parallel after T005; T008 and T009 follow foundational primitives
-- US1 tests: T010-T015 parallelizable by file focus
-- US1 implementation: T016/T017 parallelizable; T018-T022 follow loop
-- US2 tests: T023-T026 parallelizable
-- US2 implementation: T028/T029 parallelizable after T027
-- US3 tests: T032-T034 parallelizable
-- US3 implementation: T036/T037 parallelizable after T035
-- Polish: T039 and T040 parallelizable; T043 in parallel with T041 after runnable workflows exist
+- Setup: T002, T003, T004 can run in parallel.
+- Phase 2 foundational tests: T007, T008, T009 can run in parallel.
+- US1 tests: T018-T021 can run in parallel.
+- US2 tests: T028-T031 can run in parallel.
+- US3 tests: T037-T039 can run in parallel.
+- US2 implementation: T033 and T034 can run in parallel after T032.
+- US3 implementation: T041 and T042 can run in parallel after T040.
+- Polish: T044, T045, T046, T047 can run in parallel; T049 after source changes settle.
 
 ---
 
 ## Parallel Example: User Story 1
 
-```text
-Run in parallel after Phase 2:
-- T010 tests/unit/test_model.py
-- T011 tests/unit/test_device.py
-- T012 tests/unit/test_metrics.py
-- T013 tests/contract/test_train_cli.py
-- T014 tests/integration/test_train_pipeline.py
-- T015 tests/contract/test_train_cli.py (logging assertions)
+- T018 tests/unit/test_model.py
+- T019 tests/contract/test_train_cli.py (CLI args)
+- T020 tests/integration/test_train_pipeline.py
+- T021 tests/contract/test_train_cli.py (log assertions)
 
-Then implement:
-- T016 src/model.py
-- T017 src/train.py (CLI)
-- T018-T022 src/train.py (loop, eval, logging, summary)
-```
+---
 
 ## Parallel Example: User Story 2
 
-```text
-Run in parallel:
-- T024 tests/unit/test_analyze_curves.py
-- T025 tests/integration/test_analyze_curves.py
-- T026 tests/contract/test_analyze_cli.py
+- T028 tests/contract/test_analyze_cli.py
+- T029 tests/unit/test_analyze_curves.py
+- T030 tests/integration/test_analyze_curves.py
+- T031 tests/contract/test_analyze_cli.py (logging)
 
-Then implement:
-- T027 src/analyze.py (CLI)
-- T028 src/analyze.py (learning curves)
-- T029 src/analyze.py (device quality comparison)
-- T030 src/analyze.py (time comparison)
-- T031 src/analyze.py (analysis logging)
-```
+---
 
 ## Implementation Strategy
 
-### MVP First (US1)
+### MVP First (User Story 1)
 
-1. Complete Setup + Foundational phases
-2. Complete US1 tests and implementation
-3. Validate one smoke training run with required artifacts and logs
-4. Demo/deploy MVP before moving to later stories
+1. Complete Phase 1 (Setup) and Phase 2 (Foundational Tests).
+2. Complete Phase 3 (Foundational Implementation).
+3. Complete US1 tests and implementation (Phase 4).
+4. Validate artifacts, device/logging behavior, and fail-fast contract.
+5. Demo MVP before adding additional stories.
 
 ### Incremental Delivery
 
-1. Deliver US1 (training + artifacts + logging)
-2. Deliver US2 (learning/time comparison analysis)
-3. Deliver US3 (classification quality analysis)
-4. Finish cross-cutting docker/doc/performance/approval tasks
+1. Deliver US1: training/evaluation/logging baseline.
+2. Deliver US2: learning curves + device quality/time comparisons.
+3. Deliver US3: classification quality visualizations.
+4. Run Polish (Phase 7): code quality, container, acceptance, commit-gate.
 
-### Team Parallelization
+### Parallel Team Strategy
 
-1. One engineer focuses on train/runtime path (US1)
-2. One engineer focuses on analyze path (US2/US3)
-3. One engineer focuses on contracts, docker, and docs (Phase 6)
+1. All members complete Setup together.
+2. All members complete Foundational Tests (test-first gate).
+3. One stream: runtime/training path (US1, Foundational Implementation).
+4. Another stream: analysis/visualization path (US2/US3).
+5. Cross-cutting stream: container, docs, acceptance, code quality.
+6. Everyone syncs on T053 before any commit.
