@@ -13,20 +13,20 @@ python -m pip install -r requirements.txt
 Run training with explicit device selection:
 
 ```bash
-python src/train.py -d cpu
+python -m src.train -d cpu
 ```
 
 Example with custom options:
 
 ```bash
-python src/train.py -d xpu -e 20 -r ./results/xpu-run -b 64 -lr 0.001 -m ./data
+python -m src.train -d xpu -e 20 -r ./results/xpu-run -b 64 -lr 0.001 -m ./data
 ```
 
 Run a paired CPU and XPU experiment for comparison:
 
 ```bash
-python src/train.py -d cpu -e 10 -r ./results/cpu-run -m ./data
-python src/train.py -d xpu -e 10 -r ./results/xpu-run -m ./data
+python -m src.train -d cpu -e 10 -r ./results/cpu-run -m ./data
+python -m src.train -d xpu -e 10 -r ./results/xpu-run -m ./data
 ```
 
 ## Analyze
@@ -34,7 +34,7 @@ python src/train.py -d xpu -e 10 -r ./results/xpu-run -m ./data
 Generate curves and metrics from saved CSV files:
 
 ```bash
-python src/analyze.py -r ./results
+python -m src.analyze -r ./results
 ```
 
 ## Expected Outputs
@@ -42,6 +42,7 @@ python src/analyze.py -r ./results
 - CSV files with per-epoch metrics and device metadata
 - CSV files include epoch-level elapsed time and run-level training time
 - model checkpoint file
+- per-run plain-text log file named `run_<run_id>.log`
 - learning curve plots
 - classification metrics visualizations
 - CPU-vs-XPU quality comparison plot when both runs are available

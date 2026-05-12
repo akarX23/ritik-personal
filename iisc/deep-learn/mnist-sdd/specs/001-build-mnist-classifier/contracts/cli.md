@@ -1,6 +1,6 @@
 # CLI Contract: MNIST Digit Classifier Pipeline
 
-## `train.py`
+## `python -m src.train`
 
 Purpose: train the MNIST model, run scheduled validation/testing, and write metrics CSV files.
 
@@ -17,6 +17,8 @@ Behavior:
 - Records per-epoch loss, accuracy, elapsed time, and device in CSV files.
 - Runs validation and test checks every 5 epochs.
 - Logs total run time as `training_time_seconds` in `run_summary.csv`.
+- Emits plain-text progress logs to console and to `<results_dir>/run_<run_id>.log`.
+- Emits concise per-epoch log lines with `epoch`, `elapsed_seconds`, `loss`, and `accuracy`.
 - Fails if the requested device is unavailable (no automatic fallback).
 
 Outputs:
@@ -26,8 +28,9 @@ Outputs:
 - `run_summary.csv`
 - `predictions.csv` (final test predictions and labels)
 - model checkpoint file (`model.pt`)
+- per-run plain-text log file (`run_<run_id>.log`)
 
-## `analyze.py`
+## `python -m src.analyze`
 
 Purpose: generate curves and comparisons from saved CSV outputs.
 
@@ -40,6 +43,7 @@ Behavior:
 - Produces classification metrics visualizations.
 - Produces CPU-vs-XPU comparison plots when both device runs are available.
 - Produces CPU-vs-XPU training time comparison from `run_summary.csv` entries.
+- Emits lifecycle progress logs to console and per-run plain-text log file in the results directory.
 
 Outputs:
 - learning curve images
@@ -47,3 +51,4 @@ Outputs:
 - confusion matrix image
 - device quality comparison image when both device datasets exist
 - device time comparison image when both device summaries exist
+- per-run plain-text log file (`run_<run_id>.log`)

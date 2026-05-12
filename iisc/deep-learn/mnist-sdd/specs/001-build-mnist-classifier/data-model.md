@@ -77,12 +77,29 @@ Fields:
 - `labels`: class labels 0-9
 - `matrix`: 10x10 count matrix
 
+### ProgressLogEvent
+
+Represents one emitted progress log event for a run.
+
+Fields:
+- `run_id`: parent run identifier
+- `timestamp`: event timestamp
+- `level`: log level (`INFO`, `WARNING`, `ERROR`)
+- `event_type`: lifecycle or epoch
+- `message`: plain-text log line content
+- `epoch`: optional epoch index (required for epoch events)
+- `elapsed_seconds`: optional elapsed time for epoch events
+- `loss`: optional loss value for epoch events
+- `accuracy`: optional accuracy value for epoch events
+- `log_file`: path to `run_<run_id>.log`
+
 ## Relationships
 
 - One `TrainingRun` has many `EpochMetrics` rows.
 - One `TrainingRun` has zero or more `EvaluationSnapshot` rows.
 - One `TrainingRun` has one `ClassificationReport` and one `ConfusionMatrix` after testing.
 - One `DeviceTimeComparison` references two `TrainingRun` records (`cpu` and `xpu`).
+- One `TrainingRun` has many `ProgressLogEvent` records.
 - `analysis.py` consumes the persisted CSV outputs derived from these entities.
 
 ## Validation Rules
@@ -94,6 +111,8 @@ Fields:
 - `speedup_ratio` is computed only when `xpu_training_time_seconds > 0`.
 - `labels` must cover the 10 MNIST classes.
 - Visualization inputs must exist before analysis runs.
+- Per-epoch log events must include `epoch`, `elapsed_seconds`, `loss`, and `accuracy`.
+- Log file name must match `run_<run_id>.log`.
 
 ### ContainerConfig
 

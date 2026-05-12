@@ -16,6 +16,11 @@
 - Q: Should the container support XPU device passthrough, or run CPU-only inside Docker? → A: CPU-only inside Docker; no XPU/GPU driver dependencies in the image.
 - Q: How should MNIST data be provisioned inside the container? → A: Host volume mount (`-v ./data:/app/data`); fall back to downloading via torchvision only if the data directory is absent.
 - Q: What is the acceptable compressed image size ceiling? → A: No upper limit; use a small base image (e.g., `python:3.11-slim`).
+- Q: What should be the primary logging destination for progress tracking? → A: Log to both console output and a per-run log file in the results directory.
+- Q: What progress granularity should logs use during training? → A: Use concise per-epoch progress logs plus key lifecycle events.
+- Q: Should logs use plain text lines or structured JSON lines? → A: Use plain text log lines.
+- Q: What minimum fields should each per-epoch log line include? → A: epoch, elapsed_seconds, loss, accuracy.
+- Q: What log file naming rule should be used for per-run logs? → A: Use `run_<run_id>.log` in the results directory.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -105,6 +110,9 @@ As a practitioner, I want classification metrics visualizations so that I can un
 - **FR-012**: System MUST enforce explicit user approval before any commit operation related to this feature work.
 - **FR-013**: System MUST provide a Dockerfile that packages all runtime dependencies and enables the full training, evaluation, and analysis workflow to run inside a container on CPU only; no XPU/GPU driver dependencies are included in the image. The base image MUST be a slim variant (e.g., `python:3.11-slim`); there is no compressed-size ceiling.
 - **FR-014**: The container MUST accept a host-mounted volume at `/app/data` for MNIST data; if no volume is mounted and the data directory is absent, the training script MUST download MNIST via torchvision automatically.
+- **FR-015**: System MUST emit progress logs to both console and a per-run plain-text log file stored in the selected results directory for training and analysis workflows, using concise per-epoch messages plus key lifecycle events.
+- **FR-016**: Each per-epoch training progress log line MUST include at least `epoch`, `elapsed_seconds`, `loss`, and `accuracy` fields.
+- **FR-017**: Per-run plain-text log files MUST use the naming format `run_<run_id>.log` inside the selected results directory.
 
 ### Constitution Alignment Requirements *(mandatory)*
 

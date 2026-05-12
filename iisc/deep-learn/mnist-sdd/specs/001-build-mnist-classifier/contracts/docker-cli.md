@@ -37,7 +37,7 @@ docker run --rm \
 
 - Device: `cpu` (hardcoded in default `CMD`)
 - Data: reads from `/app/data`; downloads MNIST if directory is empty or absent
-- Results: writes CSV metrics, PNGs, and `model.pt` to `/app/results`
+- Results: writes CSV metrics, PNGs, `model.pt`, and `run_<run_id>.log` to `/app/results`
 - Exit code 0 on success; non-zero on any failure
 
 ### Train (custom epochs)
@@ -63,6 +63,7 @@ docker run --rm \
 
 - Reads CSVs from `/app/results`
 - Writes PNG visualisations to `/app/results`
+- Emits lifecycle logs to console and to `run_<run_id>.log` in `/app/results`
 - Fails with clear message if required CSVs are absent
 
 ### Run Tests
@@ -93,7 +94,7 @@ docker run --rm mnist-classifier pytest tests/ -v
 | Volume | Container Path | Purpose |
 |--------|----------------|---------|
 | data | `/app/data` | MNIST dataset (optional; downloaded if absent) |
-| results | `/app/results` | CSV metrics, PNGs, `model.pt` (persist beyond container) |
+| results | `/app/results` | CSV metrics, PNGs, `model.pt`, `run_<run_id>.log` (persist beyond container) |
 
 ---
 

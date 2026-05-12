@@ -64,3 +64,35 @@
 - Alternatives considered:
 	- Bake dataset into image via `COPY data/`: rejected — inflates image; fails if data not present at build time.
 	- Require volume mount with no fallback: rejected — breaks CI and first-run user experience.
+
+## Decision 9: Progress logging destination — console plus per-run file
+
+- Decision: Emit progress logs to both console and a per-run log file in the selected results directory.
+- Rationale: Console output provides live visibility, while file output provides durable run diagnostics for troubleshooting and reproducibility.
+- Alternatives considered:
+	- Console-only logging: rejected — no retained history after process exit.
+	- File-only logging: rejected — weak interactive feedback during long runs.
+
+## Decision 10: Plain-text concise per-epoch log format
+
+- Decision: Use plain-text log lines with concise per-epoch entries and lifecycle events.
+- Rationale: Human-readable logs match CLI-first usage and are easier to inspect quickly during experiments.
+- Alternatives considered:
+	- JSON logs: rejected — more parsing overhead and unnecessary complexity for current scope.
+	- Per-batch logs: rejected — too verbose, higher I/O overhead, and reduced readability.
+
+## Decision 11: Mandatory per-epoch log fields
+
+- Decision: Each per-epoch log line must include `epoch`, `elapsed_seconds`, `loss`, and `accuracy`.
+- Rationale: These fields provide minimal but sufficient progress and quality signals aligned with existing CSV metrics.
+- Alternatives considered:
+	- Epoch-only logs: rejected — insufficient training quality visibility.
+	- Expanded fields on every line (device, LR, batch size): rejected — redundant/noisy for concise logs.
+
+## Decision 12: Per-run log file naming
+
+- Decision: Name each run log file as `run_<run_id>.log` within `results_dir`.
+- Rationale: Stable deterministic naming avoids collisions and aligns logs with other run-scoped artifacts.
+- Alternatives considered:
+	- Single rolling `training.log`: rejected — mixed runs reduce traceability.
+	- Timestamp-only names: rejected — harder to correlate directly with run IDs.
