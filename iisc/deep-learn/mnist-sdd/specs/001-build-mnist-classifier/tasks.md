@@ -24,10 +24,10 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 **Purpose**: Create project skeleton, install dependencies, and configure tooling
 
-- [ ] T001 Create project directory structure: `src/`, `tests/unit/`, `tests/integration/`, `tests/contract/`, `data/`, `results/`
-- [ ] T002 Create `requirements.txt` with `torch` and `torchvision` from PyTorch nightly xpu index (`--index-url https://download.pytorch.org/whl/nightly/xpu`) plus `matplotlib` and `pytest`
-- [ ] T003 [P] Create `src/__init__.py` as empty package marker
-- [ ] T004 [P] Create `tests/__init__.py`, `tests/unit/__init__.py`, `tests/integration/__init__.py`, `tests/contract/__init__.py` as empty package markers
+- [X] T001 Create project directory structure: `src/`, `tests/unit/`, `tests/integration/`, `tests/contract/`, `data/`, `results/`
+- [X] T002 Create `requirements.txt` with `torch` and `torchvision` from PyTorch nightly xpu index (`--index-url https://download.pytorch.org/whl/nightly/xpu`) plus `matplotlib` and `pytest`
+- [X] T003 [P] Create `src/__init__.py` as empty package marker
+- [X] T004 [P] Create `tests/__init__.py`, `tests/unit/__init__.py`, `tests/integration/__init__.py`, `tests/contract/__init__.py` as empty package markers
 
 **Checkpoint**: Project structure in place and dependencies defined — ready to build foundational modules
 
@@ -39,9 +39,9 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Implement device validation in `src/device.py`: accept `"cpu"` or `"xpu"`, map to `torch.device`, raise `RuntimeError` with actionable message if selected device is unavailable; no fallback logic
-- [ ] T006 [P] Implement MNIST data loading in `src/data.py`: load train/val/test splits via `torchvision.datasets.MNIST`, return `DataLoader` objects for each split; accept `data_dir`, `batch_size`, `device` as arguments
-- [ ] T007 [P] Implement CSV metric writer in `src/metrics.py`: functions to append a row to `metrics_train.csv`, `metrics_validation.csv`, `metrics_test.csv`, and `run_summary.csv` using only the `csv` stdlib module; column schema matches `EpochMetrics` and `EvaluationSnapshot` entities in `data-model.md`
+- [X] T005 Implement device validation in `src/device.py`: accept `"cpu"` or `"xpu"`, map to `torch.device`, raise `RuntimeError` with actionable message if selected device is unavailable; no fallback logic
+- [X] T006 [P] Implement MNIST data loading in `src/data.py`: load train/val/test splits via `torchvision.datasets.MNIST`, return `DataLoader` objects for each split; accept `data_dir`, `batch_size`, `device` as arguments
+- [X] T007 [P] Implement CSV metric writer in `src/metrics.py`: functions to append a row to `metrics_train.csv`, `metrics_validation.csv`, `metrics_test.csv`, and `run_summary.csv` using only the `csv` stdlib module; column schema matches `EpochMetrics` and `EvaluationSnapshot` entities in `data-model.md`
 
 **Checkpoint**: Foundational modules ready — user story implementation can now begin
 
@@ -57,20 +57,20 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T008 [P] [US1] Write unit tests for `MnistClassifier` forward pass shape, dtype, and no-loop batch guarantee in `tests/unit/test_model.py`
-- [ ] T009 [P] [US1] Write unit tests for `device.py` — valid device accepted, unavailable device raises `RuntimeError`, no fallback occurs — in `tests/unit/test_device.py`
-- [ ] T010 [P] [US1] Write unit tests for `metrics.py` CSV writer — correct columns written, rows appended, file created on first call — in `tests/unit/test_metrics.py`
-- [ ] T011 [P] [US1] Write contract tests for `train.py` CLI arguments (`-e`, `-r`, `-d`, `-b`, `-lr`, `-m`) and required `--device` enforcement in `tests/contract/test_train_cli.py`
-- [ ] T012 [P] [US1] Write integration test for one full training run: verify all four CSV output files exist with expected columns and at least one data row in `tests/integration/test_train.py`
+- [X] T008 [P] [US1] Write unit tests for `MnistClassifier` forward pass shape, dtype, and no-loop batch guarantee in `tests/unit/test_model.py`
+- [X] T009 [P] [US1] Write unit tests for `device.py` — valid device accepted, unavailable device raises `RuntimeError`, no fallback occurs — in `tests/unit/test_device.py`
+- [X] T010 [P] [US1] Write unit tests for `metrics.py` CSV writer — correct columns written, rows appended, file created on first call — in `tests/unit/test_metrics.py`
+- [X] T011 [P] [US1] Write contract tests for `train.py` CLI arguments (`-e`, `-r`, `-d`, `-b`, `-lr`, `-m`) and required `--device` enforcement in `tests/contract/test_train_cli.py`
+- [X] T012 [P] [US1] Write integration test for one full training run: verify all four CSV output files exist with expected columns and at least one data row in `tests/integration/test_train.py`
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement `MnistClassifier` in `src/model.py`: `nn.Sequential` with layers `784 → 256 (ReLU) → 128 (ReLU) → 10`; typed `forward(x: torch.Tensor) -> torch.Tensor`; no raw Python loops over batch elements
-- [ ] T014 [US1] Implement `train.py` argument parser with `-e/--epochs` (default 10), `-r/--results` (default `./results`), `-d/--device` (required, `cpu` or `xpu`), `-b/--batch` (default 64), `-lr/--lr` (default 0.001), `-m/--data` (default `./data`) in `src/train.py`
-- [ ] T015 [US1] Implement training loop in `src/train.py`: load MNIST via `data.py`, validate device via `device.py`, train with CrossEntropyLoss and Adam, log per-epoch `loss`, `accuracy`, `elapsed_seconds`, `device` to `metrics_train.csv` via `metrics.py`
-- [ ] T016 [US1] Add validation and test evaluation every 5 epochs in `src/train.py`: write rows to `metrics_validation.csv` and `metrics_test.csv` with matching schema
-- [ ] T017 [US1] Add `run_summary.csv` write with `training_time_seconds` and model checkpoint save (`model.pt`) at end of training in `src/train.py`
-- [ ] T018 [US1] Add fail-fast error handling for missing data directory and interrupted-run logging in `src/train.py`
+- [X] T013 [US1] Implement `MnistClassifier` in `src/model.py`: `nn.Sequential` with layers `784 → 256 (ReLU) → 128 (ReLU) → 10`; typed `forward(x: torch.Tensor) -> torch.Tensor`; no raw Python loops over batch elements
+- [X] T014 [US1] Implement `train.py` argument parser with `-e/--epochs` (default 10), `-r/--results` (default `./results`), `-d/--device` (required, `cpu` or `xpu`), `-b/--batch` (default 64), `-lr/--lr` (default 0.001), `-m/--data` (default `./data`) in `src/train.py`
+- [X] T015 [US1] Implement training loop in `src/train.py`: load MNIST via `data.py`, validate device via `device.py`, train with CrossEntropyLoss and Adam, log per-epoch `loss`, `accuracy`, `elapsed_seconds`, `device` to `metrics_train.csv` via `metrics.py`
+- [X] T016 [US1] Add validation and test evaluation every 5 epochs in `src/train.py`: write rows to `metrics_validation.csv` and `metrics_test.csv` with matching schema
+- [X] T017 [US1] Add `run_summary.csv` write with `training_time_seconds` and model checkpoint save (`model.pt`) at end of training in `src/train.py`
+- [X] T018 [US1] Add fail-fast error handling for missing data directory and interrupted-run logging in `src/train.py`
 
 **Checkpoint**: User Story 1 fully functional and independently testable — MVP deliverable
 
@@ -86,16 +86,16 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T019 [P] [US2] Write contract tests for `analyze.py` CLI: `-r/--results` required, missing directory raises clear error — in `tests/contract/test_analyze_cli.py`
-- [ ] T020 [P] [US2] Write unit tests for curve-plotting functions: given synthetic CSV data, assert plot image file is written to the expected path — in `tests/unit/test_analyze_curves.py`
-- [ ] T021 [P] [US2] Write integration test for learning curves: use a fixture results directory with pre-made CSV files, assert all three curve image files are produced — in `tests/integration/test_curves.py`
+- [X] T019 [P] [US2] Write contract tests for `analyze.py` CLI: `-r/--results` required, missing directory raises clear error — in `tests/contract/test_analyze_cli.py`
+- [X] T020 [P] [US2] Write unit tests for curve-plotting functions: given synthetic CSV data, assert plot image file is written to the expected path — in `tests/unit/test_analyze_curves.py`
+- [X] T021 [P] [US2] Write integration test for learning curves: use a fixture results directory with pre-made CSV files, assert all three curve image files are produced — in `tests/integration/test_curves.py`
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Implement `analyze.py` CLI entry point with `-r/--results` (required) argument and results-dir validation in `src/analyze.py`
-- [ ] T023 [P] [US2] Implement `plot_learning_curves()` in `src/analyze.py`: read `metrics_train.csv`, `metrics_validation.csv`, `metrics_test.csv`; plot loss and accuracy vs epoch for each split; save to `<results_dir>/learning_curves_loss.png` and `learning_curves_accuracy.png`
-- [ ] T024 [P] [US2] Implement `plot_device_comparison()` in `src/analyze.py`: when two subdirectories for `cpu` and `xpu` runs exist under `--results`, overlay their training loss/accuracy curves and save to `<results_dir>/device_comparison.png`
-- [ ] T025 [US2] Wire `plot_learning_curves()`, `plot_device_comparison()`, and `plot_time_comparison()` into `analyze.py` main execution flow, with clear dependency error if required CSV files are absent
+- [X] T022 [US2] Implement `analyze.py` CLI entry point with `-r/--results` (required) argument and results-dir validation in `src/analyze.py`
+- [X] T023 [P] [US2] Implement `plot_learning_curves()` in `src/analyze.py`: read `metrics_train.csv`, `metrics_validation.csv`, `metrics_test.csv`; plot loss and accuracy vs epoch for each split; save to `<results_dir>/learning_curves_loss.png` and `learning_curves_accuracy.png`
+- [X] T024 [P] [US2] Implement `plot_device_comparison()` in `src/analyze.py`: when two subdirectories for `cpu` and `xpu` runs exist under `--results`, overlay their training loss/accuracy curves and save to `<results_dir>/device_comparison.png`
+- [X] T025 [US2] Wire `plot_learning_curves()`, `plot_device_comparison()`, and `plot_time_comparison()` into `analyze.py` main execution flow, with clear dependency error if required CSV files are absent
 
 **Checkpoint**: User Stories 1 and 2 independently functional
 
@@ -111,16 +111,16 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T026 [P] [US3] Write unit tests for confusion matrix plot function: given a synthetic 10×10 matrix, assert output file written with correct class labels — in `tests/unit/test_analyze_classification.py`
-- [ ] T027 [P] [US3] Write unit tests for classification report bar chart function: given synthetic per-class precision/recall/F1 values, assert plot file written — in `tests/unit/test_analyze_classification.py`
-- [ ] T028 [P] [US3] Write integration test for classification analysis: use a fixture results directory with a `predictions.csv`, assert `confusion_matrix.png` and `classification_report.png` are produced — in `tests/integration/test_classification.py`
+- [X] T026 [P] [US3] Write unit tests for confusion matrix plot function: given a synthetic 10×10 matrix, assert output file written with correct class labels — in `tests/unit/test_analyze_classification.py`
+- [X] T027 [P] [US3] Write unit tests for classification report bar chart function: given synthetic per-class precision/recall/F1 values, assert plot file written — in `tests/unit/test_analyze_classification.py`
+- [X] T028 [P] [US3] Write integration test for classification analysis: use a fixture results directory with a `predictions.csv`, assert `confusion_matrix.png` and `classification_report.png` are produced — in `tests/integration/test_classification.py`
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Add per-sample prediction logging to `src/train.py` test evaluation pass: write true label, predicted label columns to `predictions.csv` in `<results_dir>` for the final test epoch
-- [ ] T030 [P] [US3] Implement `plot_confusion_matrix()` in `src/analyze.py`: read `predictions.csv`, build 10×10 matrix, render as annotated heatmap, save to `<results_dir>/confusion_matrix.png`
-- [ ] T031 [P] [US3] Implement `plot_classification_report()` in `src/analyze.py`: compute per-class precision, recall, F1 from `predictions.csv`, render grouped bar chart for digits 0–9, save to `<results_dir>/classification_report.png`
-- [ ] T032 [US3] Add missing-predictions dependency error to `analyze.py` with actionable remediation message in `src/analyze.py`
+- [X] T029 [US3] Add per-sample prediction logging to `src/train.py` test evaluation pass: write true label, predicted label columns to `predictions.csv` in `<results_dir>` for the final test epoch
+- [X] T030 [P] [US3] Implement `plot_confusion_matrix()` in `src/analyze.py`: read `predictions.csv`, build 10×10 matrix, render as annotated heatmap, save to `<results_dir>/confusion_matrix.png`
+- [X] T031 [P] [US3] Implement `plot_classification_report()` in `src/analyze.py`: compute per-class precision, recall, F1 from `predictions.csv`, render grouped bar chart for digits 0–9, save to `<results_dir>/classification_report.png`
+- [X] T032 [US3] Add missing-predictions dependency error to `analyze.py` with actionable remediation message in `src/analyze.py`
 
 **Checkpoint**: All three user stories independently functional
 
@@ -130,8 +130,8 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 **Purpose**: Hardening, type safety, and final validation
 
-- [ ] T033 [P] Add type hints to all public functions in `src/model.py`, `src/train.py`, `src/data.py`, `src/device.py`, `src/metrics.py`, `src/analyze.py`
-- [ ] T034 [P] Add unit tests for `data.py` split sizes and `DataLoader` return types in `tests/unit/test_data.py`
+- [X] T033 [P] Add type hints to all public functions in `src/model.py`, `src/train.py`, `src/data.py`, `src/device.py`, `src/metrics.py`, `src/analyze.py`
+- [X] T034 [P] Add unit tests for `data.py` split sizes and `DataLoader` return types in `tests/unit/test_data.py`
 - [ ] T035 Validate all quickstart.md scenarios end-to-end: smoke train run, learning curve generation, classification report generation, and CPU/XPU timing comparison output
 - [ ] T036 [P] Confirm `run_summary.csv` includes final test accuracy ≥ 0.98 and `training_time_seconds` for a standard training run
 - [ ] T037 Request explicit user approval before any commit of implementation changes
