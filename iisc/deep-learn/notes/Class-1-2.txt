@@ -1,0 +1,30 @@
+# Subject: Deep Learning and Generative AI
+# Class Dates: 2nd, 7th May 2026
+
+## Course Overview
+
+This course is introduced as a hands-on generative AI course, not a math-heavy one. In the next 3-5 years, coding roles may shift toward builders who can use AI tools well and design systems. Areas like LLM Evals and LLMOps are already growing. Careful token usage may become an important skill, even in interviews.
+
+## AI Basics
+
+Artificial Narrow Intelligence means a machine can do a specific task that needs human intelligence, like classifying an image as "cat" or "not cat". Such systems can be built in a data-driven way by learning from data, or in a rule-based way by following fixed rules. Physical Intelligence is about robots doing everyday tasks. AGI is the bigger long-term goal, where a machine can learn and apply new knowledge more generally.
+
+Deep Learning gives these systems the ability to learn. Transformers are the main building blocks of most modern AI models. Before using AI, we should check whether the problem really needs it. It is especially useful when the input is natural language or when the output space is very large.
+
+Use cases include personal assistants, content generation, interactive entertainment, marketing insights, and conversation commerce. In commerce, AI can give personalized 24/7 interactions, improve conversion, and help in upselling. Agentic AI can plan tasks, use tools, access business content, and take actions in its domain. Multi-agent systems can split work across agents.
+
+## Models and Training
+
+A machine learning model takes input X, passes it through parameters, and gives output. It learns these parameters through training in two main stages: pre-training and post-training. The training data can be tabular, time series, image, text, audio, or video.
+
+In transformer models, data is broken into tokens, the smallest units used to represent information. The model predicts the next token from previous ones, which helps it generate coherent output.
+
+AI systems can be predictive or generative. Predictive AI has a fixed output space decided during training. Generative AI has an open-ended output space and can work across modalities. An auto-regressive model generates one token at a time and adds it back to the input until a stop token or limit is reached. A diffusion model works differently: it refines all parts together, mainly in image generation. Large Language Models are deep neural networks with many transformer layers. Foundational models are large pre-trained models with broad knowledge that can be used for specific tasks.
+
+After pre-training, post-training uses user feedback, instruction fine-tuning, and reinforcement learning so the model follows user intent better.
+
+## Workflow and SDD
+
+A practical AI/ML workflow is: define the problem and success metric, gather and engineer data, set baselines, try models and prompts, assemble the solution, deploy with monitoring and scalability, and retrain if needed.
+
+Vibe-Coding vs Specification Driven Development: vibe-coding means repeatedly prompting a model for small coding tasks. It works for small things but fails at larger scale because there is no shared truth and hallucinations increase across files and contexts. SDD is more structured: define specifications clearly, break work into tasks, implement with coding agents, and verify the output. It acts like a written contract, is easier to maintain and hand off, and keeps the human as the architect.

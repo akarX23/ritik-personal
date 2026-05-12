@@ -112,3 +112,43 @@
 - Alternatives considered:
   - Single test covering only the download path: rejected — leaves mount path and fallback-only behavior unvalidated.
   - Manual verification step only: rejected — not reproducible and not aligned with test-first requirements.
+
+## Decision 15: Multi-batch CLI uses comma-separated `--batches`
+
+- Decision: Extend `src.train` CLI with `--batches` accepting comma-separated integers (for example `--batches 32,64,128`).
+- Rationale: Compact syntax scales well for experimentation and avoids repeated flag parsing ambiguity.
+- Alternatives considered:
+  - Repeated `--batch` flags: rejected to keep parser behavior simple and explicit.
+  - Range-based flags: rejected because arbitrary non-uniform batch sets are common.
+
+## Decision 16: Execute batch sizes sequentially with distinct run IDs
+
+- Decision: For one multi-batch command, run each batch-size configuration sequentially and assign each execution its own `run_id`.
+- Rationale: Distinct run IDs preserve per-run traceability while allowing shared CSV storage.
+- Alternatives considered:
+  - Single `run_id` for the whole command: rejected due to ambiguous per-batch lineage.
+  - Parallel batch execution: rejected because it complicates deterministic resource use and reproducibility.
+
+## Decision 17: Add `batch_size` column to persisted metric rows
+
+- Decision: Include `batch_size` in train/validation/test metric rows (and summary/report contexts) so cross-batch comparisons can be reconstructed from shared files.
+- Rationale: Required for unambiguous historical comparisons when multiple runs share one directory.
+- Alternatives considered:
+  - Per-batch subdirectories only: rejected because requirement is shared CSV files.
+  - Infer batch size from command logs: rejected as brittle and non-relational.
+
+## Decision 18: `results.md` includes two tables plus configuration block
+
+- Decision: Generate `results.md` with (a) final train/validation/test loss+accuracy per batch size and (b) epoch comparison sampled every 10 epochs plus final epoch; include compared-run configuration metadata.
+- Rationale: Provides both concise outcomes and trend inspection while keeping report readable.
+- Alternatives considered:
+  - Final metrics only: rejected because trend behavior would be hidden.
+  - All epochs table: rejected as too verbose for larger runs.
+
+## Decision 19: `results.md` compares historical matching rows in results directory
+
+- Decision: Comparison scope includes all matching historical rows already present in selected results-directory CSVs.
+- Rationale: Enables cumulative experiment tracking without extra orchestration.
+- Alternatives considered:
+  - Current command rows only: rejected by clarification.
+  - Optional scope flag: deferred as non-required complexity.

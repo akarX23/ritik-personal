@@ -22,6 +22,11 @@
 - Q: What minimum fields should each per-epoch log line include? → A: epoch, elapsed_seconds, loss, accuracy.
 - Q: What log file naming rule should be used for per-run logs? → A: Use `run_<run_id>.log` in the results directory.
 - Q: What minimum accuracy threshold should the trained model achieve on the MNIST test set? → A: 0.97 (97%).
+- Q: How should the training CLI accept multiple batch sizes? → A: Add a list flag using comma-separated values (for example `--batches 32,64,128`).
+- Q: What comparison format should `results.md` require for batch-size analysis? → A: Include one final-metrics table per batch size (train/validation/test loss+accuracy) and one epoch-comparison table sampled every 10 epochs.
+- Q: How should epoch sampling work when epochs are fewer than 10 or not divisible by 10? → A: Include multiples of 10 and always include the final epoch.
+- Q: How should run identity be recorded for sequential multi-batch training in shared CSV files? → A: Use a distinct `run_id` for each batch-size execution and include `batch_size` in every row.
+- Q: What run scope should `results.md` compare in the results directory? → A: Compare all matching historical rows in the results-directory CSV files.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -114,6 +119,14 @@ As a practitioner, I want classification metrics visualizations so that I can un
 - **FR-015**: System MUST emit progress logs to both console and a per-run plain-text log file stored in the selected results directory for training and analysis workflows, using concise per-epoch messages plus key lifecycle events.
 - **FR-016**: Each per-epoch training progress log line MUST include at least `epoch`, `elapsed_seconds`, `loss`, and `accuracy` fields.
 - **FR-017**: Per-run plain-text log files MUST use the naming format `run_<run_id>.log` inside the selected results directory.
+- **FR-018**: Training CLI MUST accept multiple batch sizes through a comma-separated list flag `--batches` (for example `--batches 32,64,128`).
+- **FR-019**: Training workflow MUST execute all configured epochs for each batch size from `--batches` sequentially and persist outputs in the same CSV files.
+- **FR-020**: Persisted metrics CSV rows for train, validation, and test MUST include a `batch_size` column to support cross-batch comparisons in one shared file set.
+- **FR-021**: Analysis workflow MUST generate `results.md` in the selected results directory with two comparison tables: (a) final train/validation/test loss+accuracy per batch size and (b) epoch comparison sampled every 10 epochs.
+- **FR-022**: `results.md` MUST include the run configuration used to produce compared results, including at least device, epochs, learning rate, and the batch-size list.
+- **FR-023**: The epoch-comparison table in `results.md` MUST include epoch rows at multiples of 10 and MUST always include the final epoch even when it is not a multiple of 10.
+- **FR-024**: For multi-batch training commands, each batch-size execution MUST use a distinct `run_id` and every persisted metric row MUST include `batch_size` for unambiguous comparison in shared CSV files.
+- **FR-025**: `results.md` MUST compare all matching historical rows present in the selected results-directory CSV files (not only rows from the current command).
 
 ### Constitution Alignment Requirements *(mandatory)*
 
@@ -125,7 +138,7 @@ As a practitioner, I want classification metrics visualizations so that I can un
 
 ### Key Entities *(include if feature involves data)*
 
-- **TrainingRun**: Represents one complete model training/evaluation attempt, including run identifier, execution target (CPU/XPU), start/end timestamps, and status.
+- **TrainingRun**: Represents one complete model training/evaluation attempt for a single batch-size execution, including unique run identifier, batch size, execution target (CPU/XPU), start/end timestamps, and status.
 - **DatasetSplitMetrics**: Represents metrics for one split (train, validation, or test), including loss and accuracy values over epochs or final evaluation points.
 - **ModelArtifact**: Represents persisted model outputs from a run, including model version reference and associated run identifier.
 - **ClassificationReport**: Represents class-level evaluation output including precision, recall, F1-score per class, and aggregate summary values.

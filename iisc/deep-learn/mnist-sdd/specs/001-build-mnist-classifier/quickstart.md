@@ -22,6 +22,14 @@ Example with custom options:
 python -m src.train -d xpu -e 20 -r ./results/xpu-run -b 64 -lr 0.001 -m ./data
 ```
 
+Run multi-batch experiments in one command:
+
+```bash
+python -m src.train -d cpu -e 20 -r ./results/multi-batch -lr 0.001 -m ./data --batches 32,64,128
+```
+
+The command executes batch sizes sequentially and appends rows to shared CSV files with a `batch_size` column.
+
 Run paired CPU and XPU experiments for comparison:
 
 ```bash
@@ -37,6 +45,8 @@ Generate curves and metrics from saved CSV files:
 python -m src.analyze -r ./results
 ```
 
+`analyze.py` also writes `results.md` that compares matching historical rows in the selected results directory.
+
 ## Validate Standard Accuracy Target (SC-002)
 
 Check the most recent run summary row and confirm `test_accuracy >= 0.97`:
@@ -45,9 +55,18 @@ Check the most recent run summary row and confirm `test_accuracy >= 0.97`:
 tail -n 1 ./results/run_summary.csv
 ```
 
+## Validate Batch-Comparison Report
+
+```bash
+grep -n "Final Metrics by Batch Size\|Epoch Comparison" ./results/results.md
+```
+
+Confirm both sections exist and configuration details are present near the top of `results.md`.
+
 ## Expected Outputs
 
 - CSV files with per-epoch metrics and device metadata
+- CSV metric rows include `batch_size` for shared-file batch comparisons
 - CSV files include epoch-level elapsed time and run-level training time
 - model checkpoint file (`model.pt`)
 - per-run plain-text log file named `run_<run_id>.log`
@@ -55,6 +74,10 @@ tail -n 1 ./results/run_summary.csv
 - classification metrics visualizations
 - CPU-vs-XPU quality comparison plot when both runs are available
 - CPU-vs-XPU training-time comparison plot when both runs are available
+- markdown comparison report (`results.md`) with:
+  - final metrics table by batch size (train/validation/test loss+accuracy)
+  - epoch-sampled comparison table (multiples of 10 plus final epoch)
+  - compared-run configuration summary (device, epochs, learning rate, batch-size list)
 
 ## Validate Code Quality (CAR-002)
 

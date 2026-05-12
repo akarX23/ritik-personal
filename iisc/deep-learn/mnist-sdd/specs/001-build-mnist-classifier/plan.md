@@ -5,40 +5,40 @@
 
 ## Summary
 
-Build and maintain a reproducible MNIST training and analysis pipeline that uses explicit device selection (`cpu` or `xpu`), fails fast when the selected device is unavailable, records timing and quality metrics, emits concise progress logs to console and per-run files, supports CPU-only container execution, and enforces code-quality gates. The standard success target is test accuracy >= 97% for standard runs.
+Update the existing MNIST pipeline to support multi-batch training in one command (`--batches`), persist combined CSV rows with explicit `batch_size`, and produce `results.md` from historical rows in the results directory. The report must include configuration metadata plus two comparison tables: final split metrics per batch size and epoch-sampled comparisons every 10 epochs plus final epoch.
 
 ## Technical Context
 
 **Language/Version**: Python 3.11+  
 **Primary Dependencies**: `torch`, `torchvision`, `matplotlib`, stdlib `csv`, stdlib `logging`, `pytest`  
-**Storage**: Local filesystem artifacts (CSV, PNG, model checkpoint, plain-text run logs)  
-**Testing**: `pytest` (unit, integration, contract) — test-first for all new and changed behavior  
+**Storage**: Local filesystem artifacts (CSV, PNG, model checkpoint, plain-text run logs, markdown report)  
+**Testing**: `pytest` (unit, integration, contract) with test-first updates for new CLI and reporting behavior  
 **Target Platform**: Linux host; Docker runtime (`python:3.11-slim`)  
 **Project Type**: CLI ML workflow (training + analysis)  
 **Performance Goals**:
-- MNIST test accuracy >= 97% for standard training runs (SC-002)
-- Primary workflow (train/evaluate/visualize) succeeds in >= 95% of valid runs (SC-001)
-- Track `elapsed_seconds` (epoch) and `training_time_seconds` (run) for regression checks  
+- Standard CPU run keeps SC-002 at test accuracy >= 97%
+- Multi-batch runs maintain measurable per-batch timings and reproducible comparisons
+- Primary workflow reliability remains >= 95% successful valid runs (SC-001)
 **Constraints**:
-- Device is explicit (`cpu` or `xpu`) with no automatic fallback
-- If `xpu` is selected and unavailable, fail with actionable error
-- Logs are plain text and must include epoch fields: `epoch`, `elapsed_seconds`, `loss`, `accuracy`
-- Docker image is CPU-only, uses `python:3.11-slim`, volume mount + download fallback
-- All code must pass linting and static type checks before commit  
+- Device remains explicit (`cpu` or `xpu`) with no fallback
+- Multi-batch execution is sequential per batch size
+- Shared CSV outputs must include `batch_size` and distinct `run_id` per batch execution
+- `results.md` compares all matching historical rows in selected results directory
+- Code-quality gates (lint and type checks) remain mandatory before commit approval
 **Scale/Scope**:
-- MNIST digits (0-9) only
-- Single-model architecture: 784 -> 256 -> 128 -> 10
-- Local/lab execution with local output directories
+- MNIST digits only (0-9)
+- Fixed architecture: 784 -> 256 -> 128 -> 10
+- Local results directories may accumulate multiple historical runs for cross-batch comparison
 
 ## Constitution Check (Pre-Design)
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Testing Standards: PASS — test-first enforced per user story; tests precede implementation tasks.
-- Code Quality Standards: PASS — lint + static analysis required by constitution; explicit code-quality validation gate added.
-- UX Consistency: PASS — fail-fast device validation, actionable errors, stable CLI flags, stable outputs.
-- Performance Requirements: PASS — SC-002 (≥97% test accuracy) and SC-001 (≥95% workflow success) are measurable and have explicit validation tasks.
-- Commit Control: PASS — explicit user approval gate task is required before any commit; no auto-commit.
+- Testing Standards: PASS - New multi-batch and report requirements have explicit test-first expectations.
+- Code Quality Standards: PASS - Changes remain in typed Python modules and contract docs; lint/type gates retained.
+- UX Consistency: PASS - New CLI behavior and report structure are explicit and deterministic.
+- Performance Requirements: PASS - Per-batch timing/accuracy comparisons are measurable and preserved in shared outputs.
+- Commit Control: PASS - No commit is planned without explicit user approval.
 
 ## Project Structure
 
@@ -86,48 +86,36 @@ tests/
     `-- test_model.py
 ```
 
-**Structure Decision**: Single Python CLI project with clear split between runtime modules (`src/`) and test layers.
+**Structure Decision**: Keep single-project CLI layout and evolve existing modules/contracts for multi-batch reporting features.
 
 ## Phase 0: Research Summary
 
-Research decisions are documented in `specs/001-build-mnist-classifier/research.md` and resolve all prior clarifications:
-- Explicit `cpu|xpu` device contract and fail-fast behavior (Decision 1, 2)
-- Epoch and run timing persistence (Decision 3)
-- CPU vs XPU analysis outputs (Decision 4)
-- Minimal dependencies: `torch`, `torchvision`, `matplotlib`, stdlib only (Decision 5)
-- Docker CPU-only portability using `python:3.11-slim` (Decision 6)
-- CPU-only PyTorch wheel in Docker; XPU wheel on host (Decision 7)
-- Data volume mount with download fallback (Decision 8)
-- Plain-text progress logging (console + `run_<run_id>.log`) (Decision 9–12)
-- Standard run quality target >= 97% test accuracy (Decision 13)
-- FR-014 runtime validation: volume mount + download fallback each need explicit test coverage (Decision 14)
+Existing decisions (1-14) remain valid. Additional decisions for new clarifications are captured in updated `research.md`:
+- `--batches` comma-separated CLI contract
+- Sequential batch execution strategy with distinct run IDs
+- Shared CSV schema extension with `batch_size`
+- `results.md` generation format and historical-row comparison scope
+- Epoch sampling rule (every 10 epochs plus final epoch)
 
-No unresolved technical clarifications remain.
+No unresolved clarifications remain.
 
 ## Phase 1: Design & Contracts
 
-Design outputs are captured in:
-- `specs/001-build-mnist-classifier/data-model.md`
-- `specs/001-build-mnist-classifier/contracts/cli.md`
-- `specs/001-build-mnist-classifier/contracts/docker-cli.md`
-- `specs/001-build-mnist-classifier/quickstart.md`
+Updated artifacts for new requirements:
+- `specs/001-build-mnist-classifier/data-model.md` (adds batch-aware run/report entities)
+- `specs/001-build-mnist-classifier/contracts/cli.md` (extends train/analyze contracts for `--batches` and `results.md`)
+- `specs/001-build-mnist-classifier/quickstart.md` (adds multi-batch usage and report validation steps)
 
-Design coverage includes:
-- Run, epoch metrics, evaluation snapshots, timing comparisons, progress-log event modeling
-- CLI argument/behavior/output contracts for training and analysis
-- Docker build/run contract for CPU-only containerized workflow
-- Data mount and download-fallback behavior explicitly described in docker-cli.md
-- Local and Docker quickstart flows aligned with module invocation (`python -m src.*`)
-- Lint/type validation instruction added to quickstart notes
+Agent context reference remains correct in `.github/copilot-instructions.md` and points to this plan path.
 
 ## Constitution Check (Post-Design)
 
-- Testing Standards: PASS — all user stories have test tasks before implementation; foundational test tasks precede implementation tasks.
-- Code Quality Standards: PASS — explicit lint/type validation task added to Polish phase.
-- UX Consistency: PASS — user-visible behavior consistent across local and Docker usage; error messages are actionable.
-- Performance Requirements: PASS — SC-001 and SC-002 both have measurable validation tasks.
-- Commit Control: PASS — T045 is a dedicated explicit user approval gate task; no task may commit without it.
+- Testing Standards: PASS - New report scope and batch semantics are contract-testable.
+- Code Quality Standards: PASS - Added requirements stay within existing quality gates.
+- UX Consistency: PASS - User-facing CLI/report contracts are explicit.
+- Performance Requirements: PASS - Batch-wise and epoch-wise comparison outputs preserve measurable outcomes.
+- Commit Control: PASS - Commit approval remains explicit and external to planning output.
 
 ## Complexity Tracking
 
-No constitutional violations or justified complexity exceptions were required for this plan.
+No constitutional violations or complexity exceptions were required.

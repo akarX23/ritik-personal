@@ -18,6 +18,7 @@ from pathlib import Path
 
 TRAIN_COLUMNS: tuple[str, ...] = (
     "run_id",
+    "batch_size",
     "epoch",
     "split",
     "loss",
@@ -28,6 +29,7 @@ TRAIN_COLUMNS: tuple[str, ...] = (
 
 EVAL_COLUMNS: tuple[str, ...] = (
     "run_id",
+    "batch_size",
     "epoch",
     "split",
     "loss",
@@ -38,6 +40,7 @@ EVAL_COLUMNS: tuple[str, ...] = (
 
 SUMMARY_COLUMNS: tuple[str, ...] = (
     "run_id",
+    "batch_size",
     "device",
     "epochs",
     "start_time",
@@ -55,6 +58,7 @@ SUMMARY_COLUMNS: tuple[str, ...] = (
 
 PREDICTIONS_COLUMNS: tuple[str, ...] = (
     "run_id",
+    "batch_size",
     "sample_index",
     "true_label",
     "predicted_label",

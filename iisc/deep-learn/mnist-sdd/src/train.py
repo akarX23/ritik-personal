@@ -71,6 +71,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Mini-batch size (default: 64)",
     )
     p.add_argument(
+        "--batches",
+        type=str,
+        default=None,
+        metavar="LIST",
+        help="Comma-separated batch sizes for multi-batch training (e.g., '32,64,128')",
+    )
+    p.add_argument(
         "-lr", "--lr",
         type=float,
         default=0.001,
@@ -139,11 +146,12 @@ def run_training(
     status = "failed"
     logger = _configure_run_logger(run_id, results_path)
     logger.info(
-        "event=lifecycle stage=start run_id=%s device=%s epochs=%d results_dir=%s",
+        "event=lifecycle stage=start run_id=%s device=%s epochs=%d results_dir=%s batch_size=%d",
         run_id,
         device_str,
         epochs,
         results_path,
+        batch_size,
     )
 
     try:
@@ -171,6 +179,7 @@ def run_training(
                 results_path,
                 {
                     "run_id": run_id,
+                    "batch_size": batch_size,
                     "epoch": epoch,
                     "split": "train",
                     "loss": round(train_loss, 6),
@@ -180,11 +189,12 @@ def run_training(
                 },
             )
             logger.info(
-                "event=epoch epoch=%d elapsed_seconds=%.4f loss=%.6f accuracy=%.6f",
+                "event=epoch epoch=%d elapsed_seconds=%.4f loss=%.6f accuracy=%.6f batch_size=%d",
                 epoch,
                 epoch_elapsed,
                 train_loss,
                 train_acc,
+                batch_size,
             )
 
             # validation + test every 5 epochs (and on final epoch)
@@ -196,6 +206,7 @@ def run_training(
                     "validation",
                     {
                         "run_id": run_id,
+                        "batch_size": batch_size,
                         "epoch": epoch,
                         "split": "validation",
                         "loss": round(val_loss, 6),
@@ -218,6 +229,7 @@ def run_training(
                     "test",
                     {
                         "run_id": run_id,
+                        "batch_size": batch_size,
                         "epoch": epoch,
                         "split": "test",
                         "loss": round(test_loss, 6),
@@ -241,7 +253,7 @@ def run_training(
         logger.info("event=lifecycle stage=checkpoint path=%s", results_path / "model.pt")
 
         # --- write final predictions ----------------------------------------
-        _write_predictions(model, test_loader, device, run_id, results_path)
+        _write_predictions(model, test_loader, device, run_id, batch_size, results_path)
 
         status = "completed"
 
@@ -263,6 +275,7 @@ def run_training(
             results_path,
             {
                 "run_id": run_id,
+                "batch_size": batch_size,
                 "device": device_str,
                 "epochs": epochs,
                 "start_time": start_dt.isoformat(),
@@ -380,6 +393,7 @@ def _write_predictions(
     loader: torch.utils.data.DataLoader,
     device: torch.device,
     run_id: str,
+    batch_size: int,
     results_path: Path,
 ) -> None:
     """Write per-sample true/predicted labels to predictions.csv."""
@@ -397,6 +411,7 @@ def _write_predictions(
                     results_path,
                     {
                         "run_id": run_id,
+                        "batch_size": batch_size,
                         "sample_index": sample_index,
                         "true_label": true_lbl,
                         "predicted_label": pred_lbl,
@@ -415,14 +430,31 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        run_training(
-            epochs=args.epochs,
-            results_dir=args.results,
-            device_str=args.device,
-            batch_size=args.batch,
-            learning_rate=args.lr,
-            data_dir=args.data,
-        )
+        # --- Determine batch sizes (single or multi-batch mode) -----------
+        if args.batches:
+            # Multi-batch mode: parse comma-separated list (T060)
+            batch_sizes = [int(b.strip()) for b in args.batches.split(",")]
+            logger_mb = logging.getLogger("mnist.train.multibatch")
+            logger_mb.info(
+                "event=multibatch_start batch_list=%s count=%d",
+                args.batches,
+                len(batch_sizes),
+            )
+        else:
+            # Single-batch mode: use --batch flag
+            batch_sizes = [args.batch]
+
+        # --- Execute training for each batch size sequentially (T060) -----
+        for batch_size in batch_sizes:
+            run_training(
+                epochs=args.epochs,
+                results_dir=args.results,
+                device_str=args.device,
+                batch_size=batch_size,
+                learning_rate=args.lr,
+                data_dir=args.data,
+            )
+
     except (ValueError, RuntimeError) as exc:
         print(f"[train] Error: {exc}", file=sys.stderr)
         sys.exit(1)

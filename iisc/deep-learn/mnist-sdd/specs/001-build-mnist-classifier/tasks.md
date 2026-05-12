@@ -152,13 +152,240 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ### Commit Gate (FR-012, CAR-005, constitution §V — MANDATORY)
 
-- [ ] T053 Request explicit user approval before any commit; present change summary and validation results
+- [X] T053 Request explicit user approval before any commit; present change summary and validation results (completed after Phase 6 validation in prior session)
+
+---
+
+## Phase 8: Extended User Story 1 — Multi-Batch Training (Priority: P1) 🔄 ✅ COMPLETE
+
+**Goal**: Extend training pipeline to support multiple batch sizes in one command via `--batches` flag, maintain distinct run_ids per batch, and persist batch_size in shared CSV files.
+
+**Independent Test**: Run multi-batch training command and confirm each batch size gets distinct run_id, batch_size appears in all metric rows, and sequential execution completes successfully.
+
+### Tests for Multi-Batch Training (MANDATORY — write before implementation)
+
+- [X] T054 [P] [US1] Contract test for `--batches` CLI flag parsing (comma-separated list format) in tests/contract/test_train_cli.py
+- [X] T055 [P] [US1] Unit test for batch-size loop sequencing logic in tests/unit/test_train.py
+- [X] T056 [P] [US1] Integration test for distinct run_id per batch in shared CSV files in tests/integration/test_train_pipeline.py
+- [X] T057 [P] [US1] Contract test for batch_size column presence in metrics_train.csv, metrics_validation.csv, metrics_test.csv, run_summary.csv in tests/contract/test_train_cli.py
+- [X] T058 [US1] Integration test for backward compatibility: single --batch flag still works when --batches is not used in tests/integration/test_train_pipeline.py
+
+### Implementation for Multi-Batch Training
+
+- [X] T059 [US1] Extend src/train.py CLI argument parser to accept --batches comma-separated list (e.g., `--batches 32,64,128`) in src/train.py
+- [X] T060 [US1] Implement batch-size loop in src/train.py that parses --batches, iterates over each size sequentially (depends on T059)
+- [X] T061 [P] [US1] Update CSV column schemas in src/metrics.py to include optional batch_size field in TRAIN_COLUMNS, EVAL_COLUMNS, SUMMARY_COLUMNS, PREDICTIONS_COLUMNS in src/metrics.py
+- [X] T062 [US1] Modify training loop in src/train.py to write batch_size to all metric CSV rows during multi-batch execution (depends on T060, T061)
+- [X] T063 [US1] Extend run_id generation in src/train.py to create distinct run_id for each batch-size execution in multi-batch mode (depends on T060)
+- [X] T064 [US1] Update per-epoch logging in src/train.py to include batch context in log output for multi-batch runs (depends on T063)
+- [X] T065 [US1] Validate and test CSV append behavior in multi-batch mode: all rows append to same file with distinct run_ids and batch_size values (depends on T062, T063)
+
+**Checkpoint**: ✅ Multi-batch training fully functional with distinct run_ids, batch_size tracking, and backward-compatible single-batch mode. All 28 tests passing.
+
+---
+
+## Phase 9: Extended User Story 2 — Results Report Generation (Priority: P2) 🔄 NEW
+
+**Goal**: Extend analyze pipeline to generate results.md with final-metrics table (per batch size), epoch-comparison table (sampled every 10 epochs plus final epoch), and configuration metadata. Compare all historical matching rows in results directory.
+
+**Independent Test**: Run analysis on multi-batch training outputs and verify results.md contains both required tables with correct structure, configuration section, and row counts matching sampled epochs.
+
+### Tests for Results Report Generation (MANDATORY — write before implementation)
+
+- [ ] T066 [P] [US2] Contract test for results.md file generation and presence in results directory in tests/contract/test_analyze_cli.py
+- [ ] T067 [P] [US2] Unit test for final-metrics table construction (batch_size, train/validation/test loss+accuracy) in tests/unit/test_analyze.py
+- [ ] T068 [P] [US2] Unit test for epoch-sampling logic (every 10 epochs + always include final epoch) in tests/unit/test_analyze.py
+- [ ] T069 [P] [US2] Integration test for results.md generation from multi-batch CSV files in tests/integration/test_analyze_curves.py
+- [ ] T070 [US2] Integration test for historical-row comparison scope: verify results.md includes all matching rows from results-directory CSVs (depends on T069)
+
+### Implementation for Results Report Generation
+
+- [ ] T071 [US2] Implement epoch-sampling function in src/analyze.py to extract rows at multiples of 10 and always include final epoch in src/analyze.py
+- [ ] T072 [P] [US2] Implement final-metrics table generation in src/analyze.py: query all unique batch_size values and construct table with train_loss, train_accuracy, validation_loss, validation_accuracy, test_loss, test_accuracy in src/analyze.py
+- [ ] T073 [P] [US2] Implement epoch-comparison table generation in src/analyze.py: sample epochs using T071 logic, group by batch_size, show per-split metrics in src/analyze.py
+- [ ] T074 [US2] Implement configuration metadata section in src/analyze.py: extract device, epochs, learning_rate, batch_size list from compared runs (depends on T072)
+- [ ] T075 [US2] Implement historical-row comparison scope in src/analyze.py: query all matching rows across selected results-directory CSVs (not just current-command rows) (depends on T072, T073)
+- [ ] T076 [US2] Integrate epoch-sampling, final-metrics, epoch-comparison, and config sections into complete results.md generation function in src/analyze.py (depends on T071, T072, T073, T074, T075)
+- [ ] T077 [US2] Add lifecycle logging for results report generation in src/analyze.py: log start, section completion, and final generation events to console and run log (depends on T076)
+- [ ] T078 [US2] Ensure results.md is written to correct results directory using CLI arguments in src/analyze.py (depends on T076)
+
+**Checkpoint**: Results report generation fully functional with both tables, configuration metadata, historical-row comparison, and proper file placement.
+
+---
+
+## Phase 10: Extended Polish & Cross-Cutting Concerns for Multi-Batch Features
+
+**Purpose**: Code quality gates, documentation validation, acceptance testing, and final commit approval for multi-batch and results.md features.
+
+### Test Coverage & Validation
+
+- [ ] T079 [P] Run flake8 lint on modified files: src/train.py, src/analyze.py, src/metrics.py with max-line-length 120
+- [ ] T080 [P] Run mypy type checks on modified files: src/train.py, src/analyze.py, src/metrics.py with --ignore-missing-imports
+- [ ] T081 Run full pytest test suite including new multi-batch and results.md tests: `pytest tests/ -v` and confirm all pass
+- [ ] T082 Validate SC-001 (≥95% workflow success): Run multi-batch training 3 times with --batches 32,64,128 and confirm all succeed with proper artifacts
+- [ ] T083 Validate SC-002 (≥97% test accuracy): Confirm final test_accuracy from multi-batch runs meets >= 0.97 threshold
+- [ ] T084 Validate quickstart multi-batch examples: Execute commands from quickstart.md section "Run multi-batch experiments" and verify all outputs
+- [ ] T085 Validate results.md structure: Run analysis on multi-batch results, confirm results.md contains "Final Metrics by Batch Size" and "Epoch Comparison" sections with correct row counts
+
+### Documentation & Acceptance
+
+- [ ] T086 Update results.md expected outputs in quickstart.md to document new files and table structure (if needed)
+- [ ] T087 Run full integration example from quickstart: multi-batch train → analyze → verify results.md structure and content
+
+### Commit Gate for Extended Features (FR-012, CAR-005)
+
+- [ ] T088 Request explicit user approval for multi-batch and results.md implementation; present validation results from T079–T087
+
+---
+
+## Extended Dependencies & Execution Order
+
+### Phase Dependencies (Extended)
+
+- Phases 1–7: ✅ Already complete (commit 1d771c6)
+- Phase 8 (US1 Multi-Batch): depends on Phases 1–7 completion
+  - Tests T054–T058: must pass before implementation T059–T065
+  - T060 depends on T059; T062 depends on T060, T061; T063 depends on T060; T064 depends on T063
+- Phase 9 (US2 Results Report): depends on Phase 8 completion (requires multi-batch training outputs)
+  - Tests T066–T070: must pass before implementation T071–T078
+  - T074 depends on T072; T075 depends on T072, T073; T076 depends on T071–T075; T077, T078 depend on T076
+- Phase 10 (Polish Extended): depends on Phase 9 completion
+  - T079, T080 can run in parallel [P]
+  - T081–T087 sequential, each validates different aspect
+  - T088 is final gate, requires explicit approval
+
+### Multi-Batch Training Flow (Phase 8)
+
+```
+T054–T057: Parallel tests (different test files)
+   ↓
+T058: Integration test (depends on all above)
+   ↓
+T059: Parse --batches CLI
+   ↓
+T060: Implement batch loop (depends on T059)
+   ↓
+T061 (parallel): CSV column schema
+T062: Write batch_size to rows (depends on T060, T061)
+T063: Distinct run_id per batch (depends on T060)
+   ↓
+T064: Update logging (depends on T063)
+T065: Validate append behavior (depends on T062, T063)
+```
+
+### Results Report Flow (Phase 9)
+
+```
+T066–T069: Parallel tests (different test files)
+   ↓
+T070: Integration test (depends on T069)
+   ↓
+T071: Epoch-sampling function
+   ↓
+T072, T073: Parallel table generation (both needed)
+   ↓
+T074: Config section (depends on T072)
+T075: Historical-row query (depends on T072, T073)
+   ↓
+T076: Full integration (depends on T071–T075)
+   ↓
+T077, T078: Logging and file placement (depend on T076)
+```
+
+### Parallel Opportunities (Extended)
+
+**Phase 8 Tests:**
+- T054, T055, T056, T057 can run in parallel
+
+**Phase 8 Implementation (after tests pass):**
+- T061 [P] can start immediately (independent CSV schema)
+- T060 blocking T062, T063 once complete
+- T064, T065 after T063, T062 respectively
+
+**Phase 9 Tests:**
+- T066, T067, T068, T069 can run in parallel
+
+**Phase 9 Implementation (after tests pass):**
+- T072, T073 can run in parallel (both construct different tables)
+- T074 can start once T072 completes
+- T075 can start once T072, T073 complete
+- T076 requires T071–T075
+- T077, T078 can run after T076
+
+**Phase 10 Polish:**
+- T079, T080 [P] lint/type checks can run in parallel
+- T081–T087 sequential, each validates previous layers
+
+---
+
+## Extended Implementation Strategy
+
+### Multi-Batch MVP (Phases 1–8)
+
+1. ✅ Phases 1–7: Complete from prior session (commit 1d771c6)
+2. **Phase 8 (US1 Multi-Batch)**:
+   - T054–T058: Write and validate all tests FAIL
+   - T059–T065: Implement multi-batch training
+   - **VALIDATE**: Run `python -m src.train -d cpu --batches 32,64,128` and verify distinct run_ids and batch_size in CSVs
+3. **Full Multi-Batch MVP Ready**
+
+### With Results Report (Phases 1–9)
+
+1. ✅ Phases 1–7: Complete
+2. ✅ Phase 8: Multi-batch training complete
+3. **Phase 9 (US2 Results Report)**:
+   - T066–T070: Write and validate all tests FAIL
+   - T071–T078: Implement results.md generation
+   - **VALIDATE**: Run `python -m src.analyze -r ./results` and verify both tables in results.md
+4. **Full Feature Complete (MVP + Multi-Batch + Reporting)**
+
+### Final Validation (Phase 10)
+
+1. Code quality gates (T079–T080)
+2. Test suite and acceptance validation (T081–T087)
+3. User approval and commit (T088)
+
+---
+
+## Task Summary
+
+| Phase | Tasks | Focus | Status |
+|-------|-------|-------|--------|
+| 1: Setup | T001–T006 | Project structure | ✅ Complete |
+| 2: Foundational Tests | T007–T011 | Test-first gate | ✅ Complete |
+| 3: Foundational Impl | T012–T017 | Shared runtime | ✅ Complete |
+| 4: US1 (Training) | T018–T027 | MNIST training | ✅ Complete |
+| 5: US2 (Curves) | T028–T036 | Learning visualization | ✅ Complete |
+| 6: US3 (Classification) | T037–T043 | Quality metrics | ✅ Complete |
+| 7: Polish | T044–T053 | Code quality, container, acceptance | ✅ Complete |
+| 8: US1 Extended | T054–T065 | **Multi-batch training** | 🔄 Pending |
+| 9: US2 Extended | T066–T078 | **Results report generation** | 🔄 Pending |
+| 10: Final Polish | T079–T088 | Code quality for new features, approval | ⏳ Pending |
+| **Total** | **88 Tasks** | MNIST with multi-batch + reporting | |
+
+---
+
+## Notes
+
+- **[X] tasks**: Already complete from prior session (commit 1d771c6)
+- **[ ] tasks**: Pending implementation for multi-batch (T054–T065) and results.md (T066–T078) features
+- **[P] marker**: Tasks can run in parallel (different files, no dependencies)
+- **[Story] label**: Maps task to user story (US1, US2, US3) for traceability
+- **Test-First**: All T054–T058, T066–T070 tests must be written and FAIL before implementation begins
+- **Backward Compatibility**: Single --batch flag mode remains functional when --batches is not specified
+- **MVP Increments**:
+  - Commit 1d771c6: US1–US3 complete (T001–T053) ✅
+  - Next: Phase 8 (T054–T065) adds multi-batch capability
+  - Then: Phase 9 (T066–T078) adds results.md comparison
+  - Finally: Phase 10 (T079–T088) validates quality and gates commit
 
 ---
 
 ## Dependencies & Execution Order
 
-### Phase Dependencies
+## Dependencies & Execution Order
+
+### Phase Dependencies (Original)
 
 - Phase 1 (Setup): no dependencies.
 - Phase 2 (Foundational Tests): depends on Phase 1; BLOCKS Phase 3 implementation.
@@ -167,13 +394,27 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 - Phase 5 (US2): depends on Phase 3 and run metrics contracts.
 - Phase 6 (US3): depends on Phase 3 and predictions contract.
 - Phase 7 (Polish): depends on completion of selected stories.
-- T053 (Commit Gate): must be the last task before any commit is made.
+
+### Phase Dependencies (Extended — Multi-Batch & Results)
+
+- Phases 1–7: ✅ Already complete (commit 1d771c6)
+- Phase 8 (US1 Multi-Batch): depends on Phases 1–7 completion
+  - Tests T054–T058: must pass before implementation T059–T065
+  - T060 depends on T059; T062 depends on T060, T061; T063 depends on T060; T064 depends on T063
+- Phase 9 (US2 Results Report): depends on Phase 8 completion (requires multi-batch training outputs)
+  - Tests T066–T070: must pass before implementation T071–T078
+  - T074 depends on T072; T075 depends on T072, T073; T076 depends on T071–T075; T077, T078 depend on T076
+- Phase 10 (Polish Extended): depends on Phase 9 completion
+  - T079, T080 can run in parallel [P]
+  - T081–T087 sequential
+  - T088 is final gate requiring explicit approval
+- T053 (Prior Commit Gate) → T088 (Extended Commit Gate): Serial; T088 follows completion of Phase 9 testing
 
 ### User Story Dependencies
 
-- US1 (P1): independent after foundational work; defines MVP.
-- US2 (P2): independent with fixture data; full value when US1 outputs are present.
-- US3 (P3): independent with fixture predictions; full value when US1 outputs are present.
+- US1 (P1): independent after foundational work; defines MVP. Extended in Phase 8 with multi-batch.
+- US2 (P2): independent with fixture data; full value when US1 outputs are present. Extended in Phase 9 with results.md.
+- US3 (P3): independent with fixture predictions; full value when US1 outputs are present. No Phase 9 extension needed.
 
 ### Within Each User Story
 
@@ -183,57 +424,116 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ### Parallel Opportunities
 
-- Setup: T002, T003, T004 can run in parallel.
-- Phase 2 foundational tests: T007, T008, T009 can run in parallel.
-- US1 tests: T018-T021 can run in parallel.
-- US2 tests: T028-T031 can run in parallel.
-- US3 tests: T037-T039 can run in parallel.
-- US2 implementation: T033 and T034 can run in parallel after T032.
-- US3 implementation: T041 and T042 can run in parallel after T040.
-- Polish: T044, T045, T046, T047 can run in parallel; T049 after source changes settle.
+- Setup (Phase 1): T002, T003, T004 in parallel.
+- Phase 2: T007, T008, T009 in parallel.
+- Phase 4 (US1 tests): T018–T021 in parallel.
+- Phase 5 (US2 tests): T028–T031 in parallel.
+- Phase 6 (US3 tests): T037–T039 in parallel.
+- **Phase 8 (US1 Multi-Batch tests)**: T054–T057 in parallel; T058 after all tests.
+- **Phase 8 (US1 Multi-Batch impl)**: T061 [P] independent; T060 → T062, T063; T064, T065 after their dependencies.
+- **Phase 9 (US2 Results tests)**: T066–T069 in parallel; T070 after.
+- **Phase 9 (US2 Results impl)**: T072, T073 in parallel; T074, T075 after; T076 last; T077, T078 after T076.
+- Phase 10 Polish: T079, T080 [P] lint/type in parallel; T081–T087 sequential; T088 final gate.
 
 ---
 
-## Parallel Example: User Story 1
+## Parallel Example: User Story 1 – Multi-Batch Training (Phase 8)
 
-- T018 tests/unit/test_model.py
-- T019 tests/contract/test_train_cli.py (CLI args)
-- T020 tests/integration/test_train_pipeline.py
-- T021 tests/contract/test_train_cli.py (log assertions)
+```
+Test Phase (parallel start):
+  - T054: tests/contract/test_train_cli.py (--batches flag parsing)
+  - T055: tests/unit/test_train.py (batch loop logic)
+  - T056: tests/integration/test_train_pipeline.py (distinct run_ids in CSV)
+  - T057: tests/contract/test_train_cli.py (batch_size column presence)
+
+Integration Test (after T054–T057):
+  - T058: tests/integration/test_train_pipeline.py (backward compatibility)
+
+Implementation Phase (sequential):
+  - T059: Parse --batches CLI
+  - T060: Implement batch loop (after T059)
+  - T061 (parallel): CSV column schema
+  - T062: Write batch_size (after T060, T061)
+  - T063: Distinct run_id per batch (after T060)
+  - T064: Update logging (after T063)
+  - T065: Validate append (after T062, T063)
+```
 
 ---
 
-## Parallel Example: User Story 2
+## Parallel Example: User Story 2 – Results Report (Phase 9)
 
-- T028 tests/contract/test_analyze_cli.py
-- T029 tests/unit/test_analyze_curves.py
-- T030 tests/integration/test_analyze_curves.py
-- T031 tests/contract/test_analyze_cli.py (logging)
+```
+Test Phase (parallel start):
+  - T066: tests/contract/test_analyze_cli.py (results.md generation)
+  - T067: tests/unit/test_analyze.py (final-metrics table)
+  - T068: tests/unit/test_analyze.py (epoch-sampling logic)
+  - T069: tests/integration/test_analyze_curves.py (full generation from CSVs)
+
+Integration Test (after T066–T069):
+  - T070: tests/integration/test_analyze_curves.py (historical-row comparison)
+
+Implementation Phase (sequential):
+  - T071: Epoch-sampling function
+  - T072, T073 (parallel): Final-metrics and epoch-comparison tables
+  - T074: Config section (after T072)
+  - T075: Historical-row query (after T072, T073)
+  - T076: Full integration (after T071–T075)
+  - T077, T078: Logging and file placement (after T076)
+```
 
 ---
 
-## Implementation Strategy
+## Implementation Strategy (Extended)
 
-### MVP First (User Story 1)
+### MVP First (User Stories 1–3)
 
-1. Complete Phase 1 (Setup) and Phase 2 (Foundational Tests).
-2. Complete Phase 3 (Foundational Implementation).
-3. Complete US1 tests and implementation (Phase 4).
-4. Validate artifacts, device/logging behavior, and fail-fast contract.
-5. Demo MVP before adding additional stories.
+1. ✅ Phase 1–7: Complete (commit 1d771c6)
+2. Demo primary training, visualization, and classification workflows
+3. Commit if needed
 
-### Incremental Delivery
+### Incremental Delivery with Multi-Batch (Phases 1–8)
 
-1. Deliver US1: training/evaluation/logging baseline.
-2. Deliver US2: learning curves + device quality/time comparisons.
-3. Deliver US3: classification quality visualizations.
-4. Run Polish (Phase 7): code quality, container, acceptance, commit-gate.
+1. ✅ Phases 1–7: Complete
+2. **Phase 8 (US1 Extended - Multi-Batch Training)**:
+   - T054–T058: Write tests, confirm FAIL
+   - T059–T065: Implement and validate multi-batch
+   - **DEMO**: `python -m src.train -d cpu --batches 32,64,128`; verify distinct run_ids and batch_size in CSVs
+3. **Commit Phase 8** if desired (multi-batch training ready)
 
-### Parallel Team Strategy
+### Full Feature with Results Report (Phases 1–9)
 
-1. All members complete Setup together.
-2. All members complete Foundational Tests (test-first gate).
-3. One stream: runtime/training path (US1, Foundational Implementation).
-4. Another stream: analysis/visualization path (US2/US3).
-5. Cross-cutting stream: container, docs, acceptance, code quality.
-6. Everyone syncs on T053 before any commit.
+1. ✅ Phases 1–7: Complete
+2. ✅ Phase 8: Multi-batch training complete
+3. **Phase 9 (US2 Extended - Results Report)**:
+   - T066–T070: Write tests, confirm FAIL
+   - T071–T078: Implement and validate results.md generation
+   - **DEMO**: `python -m src.analyze -r ./results`; verify results.md with both tables and config
+4. **Commit Phase 9** if desired (full feature complete)
+
+### Final Validation & Commit (Phase 10)
+
+1. Code quality gates: T079–T080
+2. Test suite and acceptance: T081–T087
+3. **Explicit user approval (T088)** before final commit
+4. Commit when approved
+
+### Team Execution (Multiple Developers)
+
+If team available:
+1. **Developer 1**: Phase 8 (US1 Multi-Batch Training)
+   - Parallel tests T054–T057
+   - Sequence implementation T059–T065
+   - Validate outputs
+2. **Developer 2**: Phase 9 (US2 Results Report)
+   - Wait for Phase 8 completion
+   - Parallel tests T066–T069
+   - Sequence implementation T071–T078
+   - Validate outputs
+3. **Team Lead**: Phase 10 (Polish & Commit Gate)
+   - Run quality gates T079–T080
+   - Validate acceptance T081–T087
+   - Manage user approval T088
+   - Prepare and execute final commit
+
+
