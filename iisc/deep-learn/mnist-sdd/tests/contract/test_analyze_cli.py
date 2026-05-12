@@ -135,3 +135,128 @@ def test_analyze_emits_lifecycle_logs_to_console_and_file(tmp_path, capsys):
     content = run_logs[0].read_text()
     assert "event=lifecycle stage=start" in content
     assert "event=lifecycle stage=complete" in content
+
+
+def test_analyze_generates_results_md_in_results_dir(tmp_path):
+    from src.analyze import run_analysis
+
+    results_dir = Path(tmp_path) / "results"
+    metric_cols = [
+        "run_id",
+        "batch_size",
+        "epoch",
+        "split",
+        "loss",
+        "accuracy",
+        "elapsed_seconds",
+        "device",
+    ]
+    summary_cols = [
+        "run_id",
+        "batch_size",
+        "device",
+        "epochs",
+        "start_time",
+        "end_time",
+        "training_time_seconds",
+        "final_train_loss",
+        "final_train_accuracy",
+        "final_val_loss",
+        "final_val_accuracy",
+        "final_test_loss",
+        "final_test_accuracy",
+        "status",
+        "results_dir",
+        "learning_rate",
+    ]
+
+    _write_csv(
+        results_dir / "metrics_train.csv",
+        metric_cols,
+        [
+            {
+                "run_id": "r1",
+                "batch_size": 32,
+                "epoch": 1,
+                "split": "train",
+                "loss": 0.9,
+                "accuracy": 0.70,
+                "elapsed_seconds": 1.0,
+                "device": "cpu",
+            },
+            {
+                "run_id": "r1",
+                "batch_size": 32,
+                "epoch": 10,
+                "split": "train",
+                "loss": 0.2,
+                "accuracy": 0.95,
+                "elapsed_seconds": 1.0,
+                "device": "cpu",
+            },
+        ],
+    )
+    _write_csv(
+        results_dir / "metrics_validation.csv",
+        metric_cols,
+        [
+            {
+                "run_id": "r1",
+                "batch_size": 32,
+                "epoch": 10,
+                "split": "validation",
+                "loss": 0.25,
+                "accuracy": 0.93,
+                "elapsed_seconds": 0.5,
+                "device": "cpu",
+            }
+        ],
+    )
+    _write_csv(
+        results_dir / "metrics_test.csv",
+        metric_cols,
+        [
+            {
+                "run_id": "r1",
+                "batch_size": 32,
+                "epoch": 10,
+                "split": "test",
+                "loss": 0.26,
+                "accuracy": 0.92,
+                "elapsed_seconds": 0.5,
+                "device": "cpu",
+            }
+        ],
+    )
+    _write_csv(
+        results_dir / "run_summary.csv",
+        summary_cols,
+        [
+            {
+                "run_id": "r1",
+                "batch_size": 32,
+                "device": "cpu",
+                "epochs": 10,
+                "start_time": "2026-05-12T10:00:00+00:00",
+                "end_time": "2026-05-12T10:00:30+00:00",
+                "training_time_seconds": 30.0,
+                "final_train_loss": 0.2,
+                "final_train_accuracy": 0.95,
+                "final_val_loss": 0.25,
+                "final_val_accuracy": 0.93,
+                "final_test_loss": 0.26,
+                "final_test_accuracy": 0.92,
+                "status": "completed",
+                "results_dir": str(results_dir),
+                "learning_rate": 0.001,
+            }
+        ],
+    )
+
+    run_analysis(str(results_dir))
+
+    report_path = results_dir / "results.md"
+    assert report_path.exists()
+    report = report_path.read_text(encoding="utf-8")
+    assert "Final Metrics by Batch Size" in report
+    assert "Epoch Comparison" in report

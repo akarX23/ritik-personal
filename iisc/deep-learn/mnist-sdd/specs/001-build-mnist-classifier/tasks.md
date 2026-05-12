@@ -184,7 +184,7 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ---
 
-## Phase 9: Extended User Story 2 — Results Report Generation (Priority: P2) 🔄 NEW
+## Phase 9: Extended User Story 2 — Results Report Generation (Priority: P2) 🔄 ✅ COMPLETE
 
 **Goal**: Extend analyze pipeline to generate results.md with final-metrics table (per batch size), epoch-comparison table (sampled every 10 epochs plus final epoch), and configuration metadata. Compare all historical matching rows in results directory.
 
@@ -192,24 +192,24 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ### Tests for Results Report Generation (MANDATORY — write before implementation)
 
-- [ ] T066 [P] [US2] Contract test for results.md file generation and presence in results directory in tests/contract/test_analyze_cli.py
-- [ ] T067 [P] [US2] Unit test for final-metrics table construction (batch_size, train/validation/test loss+accuracy) in tests/unit/test_analyze.py
-- [ ] T068 [P] [US2] Unit test for epoch-sampling logic (every 10 epochs + always include final epoch) in tests/unit/test_analyze.py
-- [ ] T069 [P] [US2] Integration test for results.md generation from multi-batch CSV files in tests/integration/test_analyze_curves.py
-- [ ] T070 [US2] Integration test for historical-row comparison scope: verify results.md includes all matching rows from results-directory CSVs (depends on T069)
+- [X] T066 [P] [US2] Contract test for results.md file generation and presence in results directory in tests/contract/test_analyze_cli.py
+- [X] T067 [P] [US2] Unit test for final-metrics table construction (batch_size, train/validation/test loss+accuracy) in tests/unit/test_analyze.py
+- [X] T068 [P] [US2] Unit test for epoch-sampling logic (every 10 epochs + always include final epoch) in tests/unit/test_analyze.py
+- [X] T069 [P] [US2] Integration test for results.md generation from multi-batch CSV files in tests/integration/test_analyze_curves.py
+- [X] T070 [US2] Integration test for historical-row comparison scope: verify results.md includes all matching rows from results-directory CSVs (depends on T069)
 
 ### Implementation for Results Report Generation
 
-- [ ] T071 [US2] Implement epoch-sampling function in src/analyze.py to extract rows at multiples of 10 and always include final epoch in src/analyze.py
-- [ ] T072 [P] [US2] Implement final-metrics table generation in src/analyze.py: query all unique batch_size values and construct table with train_loss, train_accuracy, validation_loss, validation_accuracy, test_loss, test_accuracy in src/analyze.py
-- [ ] T073 [P] [US2] Implement epoch-comparison table generation in src/analyze.py: sample epochs using T071 logic, group by batch_size, show per-split metrics in src/analyze.py
-- [ ] T074 [US2] Implement configuration metadata section in src/analyze.py: extract device, epochs, learning_rate, batch_size list from compared runs (depends on T072)
-- [ ] T075 [US2] Implement historical-row comparison scope in src/analyze.py: query all matching rows across selected results-directory CSVs (not just current-command rows) (depends on T072, T073)
-- [ ] T076 [US2] Integrate epoch-sampling, final-metrics, epoch-comparison, and config sections into complete results.md generation function in src/analyze.py (depends on T071, T072, T073, T074, T075)
-- [ ] T077 [US2] Add lifecycle logging for results report generation in src/analyze.py: log start, section completion, and final generation events to console and run log (depends on T076)
-- [ ] T078 [US2] Ensure results.md is written to correct results directory using CLI arguments in src/analyze.py (depends on T076)
+- [X] T071 [US2] Implement epoch-sampling function in src/analyze.py to extract rows at multiples of 10 and always include final epoch in src/analyze.py
+- [X] T072 [P] [US2] Implement final-metrics table generation in src/analyze.py: query all unique batch_size values and construct table with train_loss, train_accuracy, validation_loss, validation_accuracy, test_loss, test_accuracy in src/analyze.py
+- [X] T073 [P] [US2] Implement epoch-comparison table generation in src/analyze.py: sample epochs using T071 logic, group by batch_size, show per-split metrics in src/analyze.py
+- [X] T074 [US2] Implement configuration metadata section in src/analyze.py: extract device, epochs, learning_rate, batch_size list from compared runs (depends on T072)
+- [X] T075 [US2] Implement historical-row comparison scope in src/analyze.py: query all matching rows across selected results-directory CSVs (not just current-command rows) (depends on T072, T073)
+- [X] T076 [US2] Integrate epoch-sampling, final-metrics, epoch-comparison, and config sections into complete results.md generation function in src/analyze.py (depends on T071, T072, T073, T074, T075)
+- [X] T077 [US2] Add lifecycle logging for results report generation in src/analyze.py: log start, section completion, and final generation events to console and run log (depends on T076)
+- [X] T078 [US2] Ensure results.md is written to correct results directory using CLI arguments in src/analyze.py (depends on T076)
 
-**Checkpoint**: Results report generation fully functional with both tables, configuration metadata, historical-row comparison, and proper file placement.
+**Checkpoint**: ✅ Results report generation fully functional with both tables, configuration metadata, historical-row comparison, and proper file placement.
 
 ---
 
@@ -219,18 +219,18 @@ description: "Task list for MNIST Digit Classifier Pipeline implementation"
 
 ### Test Coverage & Validation
 
-- [ ] T079 [P] Run flake8 lint on modified files: src/train.py, src/analyze.py, src/metrics.py with max-line-length 120
-- [ ] T080 [P] Run mypy type checks on modified files: src/train.py, src/analyze.py, src/metrics.py with --ignore-missing-imports
-- [ ] T081 Run full pytest test suite including new multi-batch and results.md tests: `pytest tests/ -v` and confirm all pass
-- [ ] T082 Validate SC-001 (≥95% workflow success): Run multi-batch training 3 times with --batches 32,64,128 and confirm all succeed with proper artifacts
-- [ ] T083 Validate SC-002 (≥97% test accuracy): Confirm final test_accuracy from multi-batch runs meets >= 0.97 threshold
-- [ ] T084 Validate quickstart multi-batch examples: Execute commands from quickstart.md section "Run multi-batch experiments" and verify all outputs
-- [ ] T085 Validate results.md structure: Run analysis on multi-batch results, confirm results.md contains "Final Metrics by Batch Size" and "Epoch Comparison" sections with correct row counts
+- [X] T079 [P] Run flake8 lint on modified files: src/train.py, src/analyze.py, src/metrics.py with max-line-length 120
+- [X] T080 [P] Run mypy type checks on modified files: src/train.py, src/analyze.py, src/metrics.py with --ignore-missing-imports
+- [X] T081 Run full pytest test suite including new multi-batch and results.md tests: `pytest tests/ -v` and confirm all pass
+- [X] T082 Validate SC-001 (≥95% workflow success): Run multi-batch training 3 times with --batches 32,64,128 and confirm all succeed with proper artifacts
+- [X] T083 Validate SC-002 (≥97% test accuracy): Confirm final test_accuracy from multi-batch runs meets >= 0.97 threshold
+- [X] T084 Validate quickstart multi-batch examples: Execute commands from quickstart.md section "Run multi-batch experiments" and verify all outputs
+- [X] T085 Validate results.md structure: Run analysis on multi-batch results, confirm results.md contains "Final Metrics by Batch Size" and "Epoch Comparison" sections with correct row counts
 
 ### Documentation & Acceptance
 
-- [ ] T086 Update results.md expected outputs in quickstart.md to document new files and table structure (if needed)
-- [ ] T087 Run full integration example from quickstart: multi-batch train → analyze → verify results.md structure and content
+- [X] T086 Update results.md expected outputs in quickstart.md to document new files and table structure (if needed)
+- [X] T087 Run full integration example from quickstart: multi-batch train → analyze → verify results.md structure and content
 
 ### Commit Gate for Extended Features (FR-012, CAR-005)
 
