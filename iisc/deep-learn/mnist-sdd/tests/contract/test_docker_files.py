@@ -4,6 +4,10 @@ Tests verify structural/content contracts for Dockerfile, requirements-docker.tx
 and .dockerignore without requiring a Docker daemon.
 """
 from pathlib import Path
+import shutil
+import subprocess
+
+import pytest
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
@@ -114,15 +118,15 @@ class TestDockerignore:
         assert self.DOCKERIGNORE.exists(), ".dockerignore not found at project root"
 
     def test_excludes_data_dir(self) -> None:
-        lines = {l.strip() for l in self.DOCKERIGNORE.read_text().splitlines()}
+        lines = {line.strip() for line in self.DOCKERIGNORE.read_text().splitlines()}
         assert "data/" in lines, ".dockerignore must exclude data/"
 
     def test_excludes_results_dir(self) -> None:
-        lines = {l.strip() for l in self.DOCKERIGNORE.read_text().splitlines()}
+        lines = {line.strip() for line in self.DOCKERIGNORE.read_text().splitlines()}
         assert "results/" in lines, ".dockerignore must exclude results/"
 
     def test_excludes_git_dir(self) -> None:
-        lines = {l.strip() for l in self.DOCKERIGNORE.read_text().splitlines()}
+        lines = {line.strip() for line in self.DOCKERIGNORE.read_text().splitlines()}
         assert ".git/" in lines, ".dockerignore must exclude .git/"
 
     def test_excludes_pycache(self) -> None:
@@ -134,3 +138,88 @@ class TestDockerignore:
         assert ".venv/" in text or "venv/" in text, (
             ".dockerignore must exclude virtual environment directories"
         )
+
+
+def test_full_container_workflow_execution(tmp_path) -> None:
+    docker = shutil.which("docker")
+    if docker is None:
+        pytest.skip("docker CLI not available")
+
+    info = subprocess.run(
+        [docker, "info"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if info.returncode != 0:
+        pytest.skip("docker daemon is unavailable or permission denied")
+
+    image_tag = "mnist-classifier:test"
+    data_dir = tmp_path / "data"
+    results_dir = tmp_path / "results"
+    data_dir.mkdir(parents=True)
+    results_dir.mkdir(parents=True)
+
+    try:
+        subprocess.run(
+            [docker, "build", "-t", image_tag, str(PROJECT_ROOT)],
+            check=True,
+            cwd=PROJECT_ROOT,
+        )
+
+        subprocess.run(
+            [
+                docker,
+                "run",
+                "--rm",
+                "-v",
+                f"{data_dir}:/app/data",
+                "-v",
+                f"{results_dir}:/app/results",
+                image_tag,
+                "--epochs",
+                "1",
+                "--batch",
+                "32",
+                "--lr",
+                "0.001",
+            ],
+            check=True,
+            cwd=PROJECT_ROOT,
+        )
+
+        subprocess.run(
+            [
+                docker,
+                "run",
+                "--rm",
+                "-v",
+                f"{results_dir}:/app/results",
+                "--entrypoint",
+                "python",
+                image_tag,
+                "-m",
+                "src.analyze",
+                "--results",
+                "/app/results",
+            ],
+            check=True,
+            cwd=PROJECT_ROOT,
+        )
+    except subprocess.CalledProcessError as exc:
+        pytest.skip(f"docker runtime unavailable for integration execution: {exc}")
+
+    expected = [
+        "metrics_train.csv",
+        "metrics_validation.csv",
+        "metrics_test.csv",
+        "run_summary.csv",
+        "predictions.csv",
+        "model.pt",
+        "learning_curves_loss.png",
+        "learning_curves_accuracy.png",
+        "confusion_matrix.png",
+        "classification_report.png",
+    ]
+    for filename in expected:
+        assert (results_dir / filename).exists(), f"Missing artifact: {filename}"

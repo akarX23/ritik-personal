@@ -5,6 +5,8 @@ venv/
 data/
 results/
 *.pt
+*.log
+.env*
 .DS_Store
 Thumbs.db
 *.tmp

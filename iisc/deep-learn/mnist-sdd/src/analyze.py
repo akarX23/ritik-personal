@@ -17,13 +17,17 @@ from __future__ import annotations
 
 import argparse
 import csv
+import logging
 import sys
+import uuid
 from collections import defaultdict
 from pathlib import Path
 
+from src.metrics import run_log_path
+
 import matplotlib
 matplotlib.use("Agg")  # headless backend; must be set before pyplot import
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -206,8 +210,6 @@ def plot_confusion_matrix(results_dir: Path) -> None:
         pred_lbl = int(row["predicted_label"])
         matrix[true_lbl][pred_lbl] += 1
 
-    import matplotlib.colors as mcolors
-
     fig, ax = plt.subplots(figsize=(8, 7))
     im = ax.imshow(matrix, cmap="Blues")
     plt.colorbar(im, ax=ax)
@@ -220,8 +222,8 @@ def plot_confusion_matrix(results_dir: Path) -> None:
 
     ax.set_xticks(range(n_classes))
     ax.set_yticks(range(n_classes))
-    ax.set_xticklabels(range(n_classes))
-    ax.set_yticklabels(range(n_classes))
+    ax.set_xticklabels([str(i) for i in range(n_classes)])
+    ax.set_yticklabels([str(i) for i in range(n_classes)])
     ax.set_xlabel("Predicted Label")
     ax.set_ylabel("True Label")
     ax.set_title("Confusion Matrix")
@@ -314,6 +316,8 @@ def run_analysis(results_dir: str) -> None:
         If the directory does not exist.
     """
     path = Path(results_dir)
+    run_id = str(uuid.uuid4())
+    logger = _configure_analysis_logger(run_id, path)
     if not path.exists():
         print(
             f"[analyze] Error: results directory not found: {results_dir}\n"
@@ -322,54 +326,91 @@ def run_analysis(results_dir: str) -> None:
         )
         sys.exit(1)
 
+    logger.info("event=lifecycle stage=start run_id=%s results_dir=%s", run_id, path)
+
     errors: list[str] = []
 
     # Learning curves
     try:
         plot_learning_curves(path)
         print(f"[analyze] Saved learning_curves_*.png → {path}")
+        logger.info("event=lifecycle stage=learning_curves status=ok")
     except FileNotFoundError as exc:
         errors.append(f"Learning curves skipped: {exc}")
+        logger.warning("event=lifecycle stage=learning_curves status=skipped reason=%s", exc)
 
     # Device quality comparison
     try:
         plot_device_comparison(path)
         if (path / "device_comparison.png").exists():
             print(f"[analyze] Saved device_comparison.png → {path}")
+            logger.info("event=lifecycle stage=device_comparison status=ok")
     except FileNotFoundError as exc:
         errors.append(f"Device comparison skipped: {exc}")
+        logger.warning("event=lifecycle stage=device_comparison status=skipped reason=%s", exc)
 
     # Timing comparison
     try:
         plot_time_comparison(path)
         if (path / "time_comparison.png").exists():
             print(f"[analyze] Saved time_comparison.png → {path}")
+            logger.info("event=lifecycle stage=time_comparison status=ok")
     except (FileNotFoundError, ValueError) as exc:
         errors.append(f"Time comparison skipped: {exc}")
+        logger.warning("event=lifecycle stage=time_comparison status=skipped reason=%s", exc)
 
     # Classification outputs
     try:
         plot_confusion_matrix(path)
         print(f"[analyze] Saved confusion_matrix.png → {path}")
+        logger.info("event=lifecycle stage=confusion_matrix status=ok")
     except FileNotFoundError as exc:
         errors.append(
             f"Confusion matrix skipped – predictions.csv not found in {path}.\n"
             "  Remediation: run train.py to generate predictions.csv."
         )
+        logger.warning("event=lifecycle stage=confusion_matrix status=skipped reason=%s", exc)
 
     try:
         plot_classification_report(path)
         print(f"[analyze] Saved classification_report.png → {path}")
+        logger.info("event=lifecycle stage=classification_report status=ok")
     except FileNotFoundError as exc:
         errors.append(
             f"Classification report skipped – predictions.csv not found in {path}.\n"
             "  Remediation: run train.py to generate predictions.csv."
         )
+        logger.warning("event=lifecycle stage=classification_report status=skipped reason=%s", exc)
 
     if errors:
         print("\n[analyze] Warnings:", file=sys.stderr)
         for e in errors:
             print(f"  • {e}", file=sys.stderr)
+
+    logger.info("event=lifecycle stage=complete run_id=%s warning_count=%d", run_id, len(errors))
+
+
+def _configure_analysis_logger(run_id: str, results_path: Path) -> logging.Logger:
+    """Create a plain-text logger that writes to console and run log file."""
+    logger = logging.getLogger(f"mnist.analyze.{run_id}")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    if logger.handlers:
+        return logger
+
+    results_path.mkdir(parents=True, exist_ok=True)
+    formatter = logging.Formatter("%(message)s")
+
+    console_handler = logging.StreamHandler(stream=sys.stdout)
+    console_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(run_log_path(results_path, run_id), encoding="utf-8")
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    return logger
 
 
 # ---------------------------------------------------------------------------

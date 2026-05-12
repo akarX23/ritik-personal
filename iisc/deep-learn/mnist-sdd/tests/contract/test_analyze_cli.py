@@ -4,7 +4,8 @@ Tests must FAIL before src/analyze.py is implemented.
 """
 
 import pytest
-import sys
+import csv
+from pathlib import Path
 
 
 def _get_parser():
@@ -28,3 +29,109 @@ def test_results_long_flag():
     parser = _get_parser()
     args = parser.parse_args(["--results", "/tmp/results"])
     assert args.results == "/tmp/results"
+
+
+def _write_csv(path: Path, fieldnames: list[str], rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def test_analyze_emits_lifecycle_logs_to_console_and_file(tmp_path, capsys):
+    from src.analyze import run_analysis
+
+    results_dir = Path(tmp_path) / "results"
+    metric_cols = [
+        "run_id",
+        "epoch",
+        "split",
+        "loss",
+        "accuracy",
+        "elapsed_seconds",
+        "device",
+    ]
+
+    train_rows = [
+        {
+            "run_id": "r1",
+            "epoch": 1,
+            "split": "train",
+            "loss": 0.8,
+            "accuracy": 0.8,
+            "elapsed_seconds": 1.0,
+            "device": "cpu",
+        },
+        {
+            "run_id": "r1",
+            "epoch": 2,
+            "split": "train",
+            "loss": 0.6,
+            "accuracy": 0.86,
+            "elapsed_seconds": 1.0,
+            "device": "cpu",
+        },
+    ]
+    eval_rows = [
+        {
+            "run_id": "r1",
+            "epoch": 1,
+            "split": "validation",
+            "loss": 0.7,
+            "accuracy": 0.82,
+            "elapsed_seconds": 0.5,
+            "device": "cpu",
+        },
+        {
+            "run_id": "r1",
+            "epoch": 2,
+            "split": "validation",
+            "loss": 0.5,
+            "accuracy": 0.88,
+            "elapsed_seconds": 0.5,
+            "device": "cpu",
+        },
+    ]
+    test_rows = [
+        {
+            "run_id": "r1",
+            "epoch": 1,
+            "split": "test",
+            "loss": 0.72,
+            "accuracy": 0.81,
+            "elapsed_seconds": 0.5,
+            "device": "cpu",
+        },
+        {
+            "run_id": "r1",
+            "epoch": 2,
+            "split": "test",
+            "loss": 0.55,
+            "accuracy": 0.87,
+            "elapsed_seconds": 0.5,
+            "device": "cpu",
+        },
+    ]
+    pred_cols = ["run_id", "sample_index", "true_label", "predicted_label"]
+    pred_rows = [
+        {"run_id": "r1", "sample_index": i, "true_label": i % 10, "predicted_label": i % 10}
+        for i in range(30)
+    ]
+
+    _write_csv(results_dir / "metrics_train.csv", metric_cols, train_rows)
+    _write_csv(results_dir / "metrics_validation.csv", metric_cols, eval_rows)
+    _write_csv(results_dir / "metrics_test.csv", metric_cols, test_rows)
+    _write_csv(results_dir / "predictions.csv", pred_cols, pred_rows)
+
+    run_analysis(str(results_dir))
+
+    stdout = capsys.readouterr().out
+    assert "event=lifecycle stage=start" in stdout
+    assert "event=lifecycle stage=complete" in stdout
+
+    run_logs = list(results_dir.glob("run_*.log"))
+    assert len(run_logs) == 1
+    content = run_logs[0].read_text()
+    assert "event=lifecycle stage=start" in content
+    assert "event=lifecycle stage=complete" in content

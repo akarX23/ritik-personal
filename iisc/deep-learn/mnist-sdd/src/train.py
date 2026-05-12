@@ -10,6 +10,7 @@ All CSV outputs follow the schema defined in data-model.md.
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 import time
 from datetime import datetime, timezone
@@ -22,6 +23,7 @@ from src.device import get_device
 from src.data import load_mnist
 from src.metrics import (
     new_run_id,
+    run_log_path,
     write_train_row,
     write_eval_row,
     write_summary_row,
@@ -135,7 +137,14 @@ def run_training(
     run_start = time.perf_counter()
 
     status = "failed"
-    summary: dict = {}
+    logger = _configure_run_logger(run_id, results_path)
+    logger.info(
+        "event=lifecycle stage=start run_id=%s device=%s epochs=%d results_dir=%s",
+        run_id,
+        device_str,
+        epochs,
+        results_path,
+    )
 
     try:
         # --- data -----------------------------------------------------------
@@ -170,6 +179,13 @@ def run_training(
                     "device": device_str,
                 },
             )
+            logger.info(
+                "event=epoch epoch=%d elapsed_seconds=%.4f loss=%.6f accuracy=%.6f",
+                epoch,
+                epoch_elapsed,
+                train_loss,
+                train_acc,
+            )
 
             # validation + test every 5 epochs (and on final epoch)
             if epoch % 5 == 0 or epoch == epochs:
@@ -188,6 +204,12 @@ def run_training(
                         "device": device_str,
                     },
                 )
+                logger.info(
+                    "event=lifecycle stage=validation epoch=%d loss=%.6f accuracy=%.6f",
+                    epoch,
+                    val_loss,
+                    val_acc,
+                )
 
                 test_loss, test_acc = _evaluate(model, test_loader, criterion, device)
                 test_eval_start = time.perf_counter()
@@ -204,12 +226,19 @@ def run_training(
                         "device": device_str,
                     },
                 )
+                logger.info(
+                    "event=lifecycle stage=test epoch=%d loss=%.6f accuracy=%.6f",
+                    epoch,
+                    test_loss,
+                    test_acc,
+                )
 
                 last_val_loss, last_val_acc = val_loss, val_acc
                 last_test_loss, last_test_acc = test_loss, test_acc
 
         # --- save checkpoint ------------------------------------------------
         torch.save(model.state_dict(), results_path / "model.pt")
+        logger.info("event=lifecycle stage=checkpoint path=%s", results_path / "model.pt")
 
         # --- write final predictions ----------------------------------------
         _write_predictions(model, test_loader, device, run_id, results_path)
@@ -218,6 +247,7 @@ def run_training(
 
     except KeyboardInterrupt:
         status = "interrupted"
+        logger.error("event=lifecycle stage=interrupted run_id=%s", run_id)
         print(
             "\n[train] Run interrupted. Partial CSV logs are available in "
             f"{results_dir}",
@@ -248,6 +278,37 @@ def run_training(
                 "results_dir": str(results_path.resolve()),
             },
         )
+        logger.info(
+            "event=lifecycle stage=complete run_id=%s status=%s training_time_seconds=%.4f",
+            run_id,
+            status,
+            training_time,
+        )
+
+
+def _configure_run_logger(run_id: str, results_path: Path) -> logging.Logger:
+    """Create a plain-text logger that writes to console and run log file."""
+    logger = logging.getLogger(f"mnist.train.{run_id}")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    if logger.handlers:
+        return logger
+
+    log_path = run_log_path(results_path, run_id)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    formatter = logging.Formatter("%(message)s")
+
+    console_handler = logging.StreamHandler(stream=sys.stdout)
+    console_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    return logger
 
 
 # ---------------------------------------------------------------------------

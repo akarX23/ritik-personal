@@ -117,3 +117,8 @@ def write_prediction_row(results_dir: Path, row: dict) -> None:
 def new_run_id() -> str:
     """Return a fresh UUID4 string to identify a training run."""
     return str(uuid.uuid4())
+
+
+def run_log_path(results_dir: Path, run_id: str) -> Path:
+    """Return the canonical per-run log path for *run_id*."""
+    return results_dir / f"run_{run_id}.log"

@@ -18,6 +18,15 @@ _MNIST_MEAN = (0.1307,)
 _MNIST_STD = (0.3081,)
 
 
+def _should_download(data_dir: Path) -> bool:
+    """Return True when MNIST should be downloaded for *data_dir*.
+
+    Mount-first policy: if a mounted directory already contains files,
+    assume dataset provisioning is handled externally and skip download.
+    """
+    return (not data_dir.exists()) or (not any(data_dir.iterdir()))
+
+
 def load_mnist(
     data_dir: str | Path,
     batch_size: int,
@@ -48,11 +57,14 @@ def load_mnist(
         ]
     )
 
+    data_dir = Path(data_dir)
+    download = _should_download(data_dir)
+
     full_train = datasets.MNIST(
-        root=str(data_dir), train=True, download=True, transform=transform
+        root=str(data_dir), train=True, download=download, transform=transform
     )
     test_ds = datasets.MNIST(
-        root=str(data_dir), train=False, download=True, transform=transform
+        root=str(data_dir), train=False, download=download, transform=transform
     )
 
     val_size = int(len(full_train) * val_fraction)
