@@ -1,0 +1,43 @@
+# Subject: Deep Learning and Generative AI
+# Reflection 3
+# Topic: Neural Networks
+
+Neural networks are about efficiently representing data. Classification is one of the most important problems we try to solve. Even in modern language models, the core action is classification over a large vocabulary to predict the next token.
+
+A neural network has data as input and outputs can be classification or regression, which can be predictive or generative. It consists of a deep stack of layers, and each layer consists of neurons. Each neuron linearly combines incoming inputs with weights and biases and applies a non-linear activation function.
+
+What a neuron does, in simple terms, is to figure out a pattern in data. If raw data points are spread on a plane, it is difficult to classify them directly. The neuron learns weights and biases that help create a separation boundary between classes. If we consider a co-ordinate system, weights rotate the axes and bias translates them. Activation functions then adjust output values into non-linear bounds and improve generalization.
+
+Taking a handwritten image classification example:
+- Start with a 28x28 image.
+- Flatten it to a vector (784 values).
+- This first layer has only input values, no parameters.
+- Hidden layers start from the next layer and have learnable weights and biases.
+- If a hidden layer has 100 neurons, total parameters are 100 x 784 weights + 100 x 1 biases.
+- Neurons use activations like linear, ReLU, sigmoid, softmax.
+
+Parameters are the properties of a neuron, i.e., the learnable weights and biases. Before training, these are random. During training, they are updated so that an imaginary decision boundary is learned which separates classes effectively.
+
+Training flow is:
+- Input is passed through the network.
+- Layer by layer rotations and transformations happen in representation space.
+- A prediction is produced.
+- Prediction is compared with ground truth using a loss function.
+- The loss is sent to an optimizer to update weights and biases.
+
+For loss functions, regression can use MSE, and classification generally uses Cross Entropy. The goal is to reduce the loss over all data points.
+
+For optimization, gradient descent reduces loss by following the direction where loss decreases, computed with partial derivatives with respect to parameters. Parameters are updated using derivative value scaled by learning rate. If the loss landscape is convex, minimum can be guaranteed.
+
+In practice, loss landscapes are usually not convex. So we use stochastic gradient descent variants (like ADAM), where the gradient is treated as a random variable which helps the updates avoid getting stuck in local minima.
+
+The goal of training is robust fit: neither overfitted nor underfitted, and generalizable to unseen data.
+
+In the development-testing paradigm:
+- Data is divided into development set and test set.
+- Development set is used for training and hyperparameter tuning.
+- Training learns parameters.
+- Hyperparameter tuning decides model/training settings, often using cross validation.
+- Test set is used only for unseen evaluation of expected real-world performance.
+
+So the complete understanding is: neural networks learn representation transformations through layers of neurons, where parameters are learned from data to produce generalized decision boundaries.

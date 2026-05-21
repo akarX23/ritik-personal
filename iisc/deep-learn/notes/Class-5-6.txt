@@ -1,0 +1,57 @@
+# Subject: Deep Learning and Generative AI
+# Class Dates: 16th May, 21st May 2026
+
+Parameters are the properties of a neuron. They are the learnable weights and biases of a model.
+
+Neural networks are about efficiently representating data. Classification is the most important problem we try to solve. The core of an LLM is to generate the next token by classifying from a large vocabulory size.
+Layers in a neural network conduct translation and rotation in the input space. The expectation is that by learning enough such layers, we can estimate the rotation and translation required for new data.
+A good analogy is that the layers of a neural network unfold a crumpled piece of paper (which is our data) into a simple representation. This transformation is affected by the weights and biases. These weights and biases are learned through 
+training on labelled data. Prior to deep learning, these representations used to come from hand-crafted feature (feature engineering), from domain knowledge.
+
+What happens during training?
+Before training, the model starts with random parameters. During training, these parameters are updaated so that an imaginary decision boundary is learned which can separate different classes of data effectively. 
+Our goal with training is to make a model generalizable, i.e, it should perform well on test data.
+
+Taking an example of a neural network for handwritten image classification:
+- Start with a 28x28 image
+- Flatten it to a vector. This is the first layer, with 784 neurons.
+- This first layer only has input values, no parameters.
+- The second layer is when hidden layers start and has weights and biases. This is a dense layer since every neuron in the first layer is connected to every other neuron in the second layer. Each of these connections 
+is a weight value. Additionally, each neuron has a bias term.
+- If layer 2 has 100 neurons, then total parameters would be 100 x 784 (weights) + 100 x 1 (biases)
+- Each neuron also has activation functions, which  can be linear or non-linear like ReLU, Sigmoid, softmax, etc.
+- To calculate if a prediction is correct, we use loss functions. Regression can use MSE - mean squared error. Classification generally use Cross Entropy. Loss functions use the predicted value against the truth value.
+This loss is summed for all data points and the goal is to minimize this loss function at the end of training.
+
+Training Flow:
+- Input received into the network.
+- Layer by layer different rotations and transformations are done to the data representation.
+- A value is predicted at the end. This is compared with the ground truth and a loss score is calculated using a loss function.
+- This is sent to an optimizer which updates weights and biases. The optimizer updates the parameters in such a way that the loss score reduces. A training algorithm called stochastic gradient descent (ADAM is a variant), 
+is used for updating the parameters and reduce losses.
+
+Developement-Testing Paradigm:
+- The entire data is divided into a development set and a test set.
+- Development set is used to train and tune the hyper parameters. 
+- Training involves finding parameters. It uses data and some optimization algorithm to reduce loss.
+- Hyperparameter tuning is the process to determine different aspects of a model, the training parameters, etc. Cross validation is used for hyperparameter tuning.
+- Hyperparameters have to be tuned, learning parameters have to be learned.
+- Testing involves using a developed model on totally unseen data and evaluating an expected real world performance.
+
+Gradient Descent:
+- Method to reduce the loss by continuously checking the direction in which the loss always decreases.
+- The direction is the partial derivative of the loss with respect to different parameters.
+- The parameters are updated by offsetting the value equal to the derivative value multiplied by learning rate.
+- If the loss landscape is convex, this method is guranteed to find the minimum loss value.
+
+Stochastic Gradient Descent:
+- Most times the loss landscape for our training data is not convex, due to which normal gradient descent can get stuck in local minima.
+- In SGD, the gradient itself is treated as a random variable. Everytime there is some randomness introduced which saves the gradient from getting stuck in the local minima.
+
+The goal of training is to get a robust fit where the model is neither overfitted or underfitted.
+
+Hyper Parameter Tuning:
+- Define multiple hyper parameter combinations.
+- Perform cross-validation across all combinations.
+- Select the set of hyper-parameters which give the best accuracy.
+

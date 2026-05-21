@@ -1,0 +1,18 @@
+Reflection 2: Agentic AI and Claude Code
+
+Agentic AI is not just a chat interface. In chat, we ask simple questions and get answers, but there is no long-term memory, no real-time code execution, and no ability to modify state.
+
+In Agentic AI, we define a user goal in natural language through a high-level prompt. The LLM reasons, devises a plan, and uses tools autonomously in real-time. It also checks whether its output meets the goal and continues in a loop until the goal is achieved or the user interrupts.
+
+The agentic loop has three phases:
+- Collect Context: The agent initializes state by reading codebase, git history, CLAUDE.md, or web data before touching files.
+- Take Action: The agent edits files, runs commands, and can spawn subagents, with some tools requiring supervision.
+- Verify Results: The agent runs tests, checks diffs and type errors, and loops if output is wrong.
+
+Claude Code gives a proper structure for this workflow. The /init command scans the codebase and generates a comprehensive CLAUDE.md that is passed with every request. After that, we specify what to build and Claude creates a SPEC.md as the single source of truth. Other useful commands are /rewind, /usage, /compact, and /export. These commands help in better user experience by providing observability, debugging, and code management capabilities.
+
+Claude Code can also be extended in a structured way. Custom slash commands are .md files in .claude/commands, invoked manually with '/' and arguments. Skills are stored in .claude/skills/<name>/SKILL.md and the agent can auto-invoke them when context matches. They support context injection and allowed-tools scoping, and skills gain precedence over same-name commands.
+
+Claude.md can be defined at global, project, and sub-directory levels, with sub-directory as highest priority. It defines stack, conventions, principles, rules, and constraints.
+
+Key learning: Difference between vibe-coding and spec-driven development, and how structured use of AI can create scalable applications with large code-bases.

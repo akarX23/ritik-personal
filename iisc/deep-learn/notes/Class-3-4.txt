@@ -1,0 +1,165 @@
+# Subject: Deep Learning and Generative AI
+# Class Dates: 9th, 10th May 2026
+
+Problems with Vibe-Coding:
+- Continuous loop of prompting, coding, and patching to achieve a goal.
+- No single shared source of truth.
+- The AI Agent forgets user's intention during long sessions.
+- Hard to review or transfer knowledge to others, works for small projects.
+
+Advantages with Spec-Driven Development:
+- The user's specification is the single source of truth.
+- The agent works on a written contract, with persistent memory.
+- All functionality is tested first, then passed.
+- Scales to multi-file, multi-session projects.
+
+As an architect, a person writes the specification of what they want to build in natural language.
+This needs to be as detailed as possible, along with an acceptance criteria. The coding agent will take this
+specification as input and generate a detailed plan on how the code should be structured to meet this specification.
+The spec document created by the agent should be thoroughly reviewed by the architect and treated as a single source of truth. 
+Once the agent generates the code, the architect should be able to review diffs and decide if further changes to the spec are required. The agent
+will generate and run all the required tests to make sure all code works as is specified in the spec document. This process runs in a loop until the architect
+has achieved their final goal. Throughout the process the architect never really touches the code, but lets the agent update the code as the specifications are updated.
+
+Chat Interface:
+- A simple question answer user interface with an LLM.
+- No long-term memory or ability to execute code in real-time or modify state.
+
+Agentic AI:
+- A user goal defined in natural language in a single high-level prompt.
+- LLM reasons to devise a plan in order to achieve that goal. It plans a workflow to use different tools at its disposal.
+- Autnomously call tools in real-time in its environment where its possible to execute said tools.
+- The LLM also checks if its output achieves the user's goal and continues in a loop until the user interrupts or goal is achieved.
+
+Phases in an Agentic Loop:
+- Gather Context: An agent intializes its state by reading the codebase, git history, specific files like CLAUDE.md, or fetch data from the web. This is done before touching any of the codebase files.
+The LLM prepares a very large prompt which defines the foundation according to which the model should behave.
+- Take Action: The agent then acts by using tools like editing files, executing commands, spawning subagents, etc. Not all tools might be allowed to be executed autonmously, for example executing bash commands might require user supervision.
+Any action that can be broken down into verfiable components via tests, then those actions can be automated.
+- Verify Results: The agent runs tests, checks diffs and type errors to understand if the final goal is properly achieved and success criteria is met. It can run back in a loop 
+if the output is wrong or there are errors in the code, thus autonoumsly governing its own solution.
+
+Claude Code:
+- /init: Scans the codebase, creates a detailed summary and generates a comprehensive CLAUDE.md file which is passed along with each and every request.
+- Once you specify what you want Claude to build, it will create a SPEC.md file which will act as a single source of truth for Claude as to what to build. 
+We can also modify the SPEC.md manually to consume lesser amount of tokens.
+- /rewind: Used to go back to a previous version of the code, by maintaining a version controlled codebase.
+- /usage: Cost and token usage during the current session, along with the model split.
+- /compact: When the context capacity of the model is at its limit, Claude can help compress the context for further development.
+- /export: Export the entire conversation session history.
+
+Claude.MD can be defined in three places
+- Global level: Shared across all projects.
+- Project level: Defined for a single project.
+- Sub-directory level: For a part of a project. This is given the highest priority for the files inside that sub-directory.
+The Claude.md file defines the stack, conventions, principles, rules, and known constraints that a project code must adhere to.
+
+Extending Claude Code:
+- Custom slash commands: .md files created in .claude/commands firectory. These can be invoked using '/' and supports arguments, but can only be invoked by the user manually.
+- Skills: Stored as .claude/skills/<name>/SKILL.md. These can be auto-invoked by the agent when context matches. They support context injection, and allowed-tools to scope permissions.
+Skills gain precedence over same name commands.
+
+Anatomy of a good spec:
+- Goal: In short, what will the generated artifact do?
+- Constraints: Tech Stack, allowed and forbidden libraries, performance bounds required to be fulfilled.
+- Inputs/Outputs: Different data models for various functions, data types, file formats to be used, API Signatures to connect various components.
+- Acceptance Criteria: Clear tests to evaluate whether the generated code works as expected, so the model runs in a auto-feedback loop until the criteria is met.
+- Output Files: An explicit structure of files and folders that claude should generate to not bloat the number of artifacts.
+
+Ambigious queries and goals are not generally well received LLMs, decreasing output quality. However, when too many people provide such goals,
+the model companies like Anthropic or OpenAI, provide reasonable answers to such goals, giving the impression that the model is performing well.
+
+AI Slop is something that the AI generated which a person might think is good but it's actually not upto the mark according to an expert.
+
+Phases to code with Claude:
+- Plan before coding: Ask Claude to think, review the plan, refine the plan, and iterate. Never start implementing before reviewing the plan.
+- Implement & Commit: Review the generated code diff and scope each prompt to one phase at a time. Call out any deviation. Commit the code after each phase.
+- Verify: Run all the generated tests to check if all acceptance criteria are met. Use /loop for iterative fix-and-retest.
+- Iterate: If final output is wrong, refine the spec. Don't manually update the code. When context drifting, use /compact. When switching major tasks, use /clean. 
+Always maintain a git commit history after every action to revert back to any required state.
+
+Books for AI/ML:
+- Build an LLM from scratch: Sebastian
+- AI Engineering: Chip
+- Generative AI System Design Interview: Aminian
+
+Essential tasks in computer vision:
+- Single-label multi-class classification
+- Multi-label classification
+- Image Segmentation: Which class does each pixel belong to.
+- Object Detection: Create bounding box on different objects identified in the scene.
+
+In a vision language model, the input is an image and output is text. The core mechanism is a way to represent the image, such that the model can analyze the image and output text.
+In classical ML for vision, each task needed a different type of specialised model. However, with vision transformers, a single model is sufficient. The flow of language for text and images
+is the same, leading to using a single model for different tasks. While vision language models are more compute intensive, they give us the ability to perform multiple tasks from the same image at the same time
+which is much more powerful than figuring out which CNN to employ.
+
+Facts about NLP:
+- Goal: Modern NLP doesn't understand language, it ingests a pice of input and returns useful quantities.
+- Tasks difficulty in order: Spell Checking, Text Classification, Text Summarization, Machine Translation, Open Domain Conversational Agent.
+
+Almost any task can be formulated as a question answering problem. 
+
+Tokenization:
+It is the process of breaking down data (text, audio, image, video, etc) into smaller units (tokens). Examples of tokens:
+- Text: Words, letters, subwords
+- Image: Pixels, patches, prcessed patches
+
+Tokenization impacts model performance as it can result in an increase of the vocabulory size, affects language handling capabilities, 
+and directly affects contextual understanding. The first step in a language model is to develop a tokenization system which the model can work with. In an image model,
+we follow a process called "patchification" to divide the images into multiple patches and use those RGB values for downstream processing. No vocabulory building is necessary.
+
+Token fertility is the amount of tokens we need to represent different languages. It is a big problem in indic language representation since most open-source models have unbalanced 
+representation of different languages.
+
+Byte Pair Encoding:
+This is the process by which a tokenization scheme is created for a model based on the training data available. Steps in BPE:
+- Initially, the vocabulory contains all individual characters.
+- Then we count which pairs of characters occur the most (BiGrams). We take the most commonly occuring pair and define a new merge rule where that pair is added to the vocabulory as a token.
+- We merge all the characters that have formed a pair throughout the dataset and again find most common bigrams. This runs in a loop until we reach the target vocabulory size.
+- At the end, our vocabulort consists of the original characters and the new tokens we have built.
+
+Advantages of BPE:
+- Handles out-of-vocabulory words as well.
+- Balances common words and subwords.
+- Can capture meaningful subword units.
+
+Cons of BPE:
+- Can result in unintuitive splits.
+- New language requires complete retraining.
+- A large vocabulory can lead to high token granularization.
+
+During tokenization, we start with a character-level split of the input and apply all the vocabulory rules in order, to get the final list of tokens.
+
+Text Vectorization:
+- We assign an integer to a token and map it into the vocabulory. This is called vocabulory indexing. 
+- That integer is then passed through a one-hot encoding process and mapped to a vector of size embed_dim (chosen by the model developer). 
+- In the OHE, we create a sparse column vector of size vocab_size for every token in which only a single value is "1" corresponding to the token ID.
+- However, OHE treats all words independent which is not true. We somehow need to preserve the meaning of words and their relation with one another.
+- We use L2 Distance or cosine distance between the different tokens to reflect their "semantic distance". 
+- The word embeddings are dense vectors, with lower dimensional space, and are learned from the data. 
+- To generate the embedding matrix, we need a weight matrix which has "vocab_size" number of rows, and each row has an "embed_size" number of columns.
+
+Image Tokenization:
+- Divide an image into patches and each patch is sequentially arranged. This arrangement can then be treated as a string of words. 
+- We use a "patch + position" embedding to get an input sequence of embedding dimension vector.
+
+Audio Tokenization:
+- The input is a a waveform which is a sequence of acoustic feature vectors.
+- Each vector represents information ina  small time window.
+- Log Mel Spectrum is the commonly used vector representation.
+
+Neural Networks:
+- A neural network has some data as input and outpts can be classification, regression which can be predictive or generative.
+- It consists of a deep stack of layers. Each layer consists of neurons.
+- Each neuron linearly combines all incoming inputs and applies a non-linear activation function to them. This linear combination is done using weights and biases.
+- Important layers in modern networks: Dense Layers, Convolution Layers, Multi-Head Attention Layer, Masked MHA Layer
+
+What does a Neuron do?
+A neuron helps figuring out the pattern in a data. For example, if we raw data on a plane, it might be tough for a computer to classify it in different buckets.
+To do that, some kind of a separation boundary will need to be understood for that data. The neuron's job is figure out some kind of weights and biases based on which 
+it can draw a distinction in the different classes of data. These values are learned during training, and this concept can then be applied to solve any sort of problem.
+In a co-ordinate system, the weights help in rotating the axes, and the bias helps in translation. An activation function is applied to pull the values of the neuron outputs
+in some particular bounds and make it more generalizable. A few examples are linear, sigmoid, ReLU, softmax, etc. The end goal is to recognise the pattern.
+
+
