@@ -1,0 +1,117 @@
+# Subject: Deep Learning and Generative AI
+# Class Dates: 23ed May 2026
+
+Steps in a Transformer architecture:
+- Input sequence of tokens.
+- Convert each tokens to its embedding vector. These embeddings have the vocabulory information and the positional information.
+- So, the input is seq_len x embedding dimension (d_model) matrix.
+- Then we have the Masked Multi-Head attention mechanism to capture the relevancies between the tokens in the sequence. This is the first layer of the transformer.
+- The output of MMHA is also seq_len x d_model matrix.
+- Then we have some dense layers, called the feed-forward layers, which are applied to the output of the MMHA layer. These layers are applied to each token independently and are the same for all tokens. The output of these layers is also seq_len x d_model matrix.
+- A MMHA and Feed-Forward layer together form a transformer block. We can have multiple transformer blocks stacked on top of each other to increase the capacity of the model.
+- At the end of all blocks, we get a seq_len x d_model matrix, which is the context-aware representation of the input sequence.
+- The last token embedding in the final matrix contains the information from the entire sequence.
+- The last token embedding (1 x d_model) is passed through an LM head. This is a dense layer of size d_model x vocab_size, which converts the embedding to a vector of size vocab_size. This vector contains the logits for each token in the vocabulory, which can be converted to probabilities using softmax to get the predicted next token in the sequence.
+- The LM head is also called a de-tokenizer, as it converts the embedding back to tokens in the vocabulory. The weights of the LM head are also learned during training, and it is crucial for the model to learn how to generate the next token based on the context provided by the previous tokens in the sequence.
+
+The text corpus data is used to train by taking a few tokens at a time and generating the next token. The model learns to predict by minimizing the cross-entropy loss
+between the predicted token and the actual token. Each transformer layer has paramerets as the Q,K,V weight matrices and the feed-forward layer weights. The LM Head at the end also has parameters. 
+
+The learning happens through a mechanism called error backpropagation. It contains a step called autograd, in which the gradients of the error are calculated wrt all the parameters in all the layers.
+Autograd works in the following wayL
+- Calculate the loss for a given input sequence and the predicted output in the output layer.
+- Calculate the gradient of the loss wrt to the parameters in the layer just before the output layer. 
+- The chain rule is used to use the gradients in the current layer to calculate the gradients for the parameters in the previous layer. This is done all the way back to the embedding layer, which is the first layer of the transformer. This way, we get the gradients for all the parameters in all the layers.
+- A problem here is that chain rule involves multiplying a lot of gradients together. If any of these gradients are approaching zero, then all the gradients in the downstream layers will also be zero. This will result in the model not learing anything, as the parameters will not have any updates.
+- To mitigate this, we introduce a concept called skip connections, which bypass such small gradients. These can be introduced for a complete transformer block or just the dense layers in the transformer block. This way, the gradients can flow through the skip connections and the model can learn effectively even if some of the gradients are small.
+- This way, the model learns the output - input value, not directly the output value. This is called residual learning, and it has been shown to be very effective in training deep neural networks, including transformers.
+
+Introduction to Layer Norm:
+- In a neural network, we have inputs which are passed through activation functions. THe activation output can reach infinite or zero values, which can cause the model to diverge during training.
+- To avoid this, we introduce a normalization layer, which rescales the entire embedding vector for each token to zero mean and unit variance. This is also called internal covariate shift.
+- In a transformer, we can have pre-layer norm or post-layer norm. In pre-layer norm, we apply layer norm before the MMHA and feed-forward layers, while in post-layer norm, we apply it after these layers.
+- Intention with layer norm is that each vector should be well-behaved. Skip connections are used to learn out - in, which is more dense information, as well as the flow of the gradient is better.
+- While layer normalization is across the vector of each token, there is also a concept of batch normalization, which is across the batch of tokens. However, batch normalization is not used in transformers as it does not work well with variable sequence lengths and can cause issues during training.
+
+Modern Activation functions in GPT:
+- ReLU: It is a simple activation function that outputs the input if it is positive and zero otherwise. It is computationally efficient and helps in mitigating the vanishing gradient problem. Used in GPT-1 and early transformers.
+- GELU: It is a smoother version of ReLU, which outputs the input if it is positive and a small value if it is negative. It has been shown to perform better than ReLU in some cases, especially in transformers. Used in GPT-2, GPT-3, BERT.
+- SwiGLU: It is a combination of the sigmoid and ReLU functions. It outputs the input if it is positive and a small value if it is negative, similar to GELU, but it also has a sigmoid component that allows for better gradient flow. Used in GPT-3.5, Llama, Mistral and later models.
+
+Language Model Head:
+- The transformer layers produce a seq_len x d_model matrix, where the last token row contains the entire context of all the previous tokens.
+- LM Head's job is to take that last token context and produce the probabilities of the next token to be generated which can be appended back to the original sequence for the subsequent generations.
+- This is done by using an un-embedding matrix of dimension d_model x vocab_size which is multiplied with the 1 x d_model row of the transformer output.
+- The result is a 1 x vocab_size vector where each token has a score, called the x vector. These are the raw logits.
+- These logits are scaled using a temperature value, which is a hyperparameter. A temperature value less than 1 increases the score of the most probable tokens, while a value more than 1 decreases it. A high value can result in more randomization in the next token.
+- Temperature controls the diversity of the probability that gets produced. Small - sharp, greedy and high - flat, more random. A temperature of 1 uses a calibrated softmax.
+- After scaling we apply softmax to get the probabilities out of the raw logits.
+- There are two ways by which we sample the various tokens - top-k filtering, top-p nucleus sampling.
+- In top-k filtering, we sort the raw logits in descending order and just take the first 'k' values. Softmax is re-applied, and we sample from this truncated list.
+- In top-p nucleus, we sort the logits in descending order and accumulate tokens from the top until the summed value is >= p. Then, we re-apply softmax and sample from this list.
+
+GPT Training can be Pre-Training or Post-Training:
+- Pre-training is done on a large corpus of text data, where the model learns to predict the next token. No other mechanism is involved in this training, and the model learns to generate text based on the patterns it has seen in the training data.
+- Post-training, also called fine-tuning, is done after pre-training, where the model is trained on a specific task, such as question answering, sentiment analysis, etc.
+- Training is usually a high performance computing task, involving multiple GPUs working parallelly to speed up the training process. The training data is also pre-processed and tokenized before being fed into the model for training. A lot of effort is spent
+on deciding what data goes into the training set, as it can affect the model accuracy significantly.
+
+How does Pre-training work?
+- Pre-training is kind of self-supervised learning.
+- The input is a dataset of billions of tokens, and the job is to predict the next token in the sequence.
+- Initially, all the parameters in the model are randomized. Techniques like Xavier normal initialization and Glorot normal initialization are used to initialize the parameters in a way that helps in better convergence during training.
+- It is called self-supervised because the model does not require labelled data. The data itself is used in short sequences, and the model learns to predict the next token based on the previous tokens in the sequence. 
+The loss is calculated based on the predicted token and the actual next token in the sequence, and the model learns by minimizing this loss through backpropagation.
+- During initial epochs of pre-training, only one token is predicted at a time. Afterwards, we do something called curriculum learning, where multiple tokens are predicted at a time and the joint loss is calculated.
+
+How does Post-Training work?
+- At the end of pre-training, the model has reached the base-model pre-trained stage where it has learned to produce the next token properly.
+- Post-training involves updating the weights and biases of the model for tasks which humans generally interact with these AI models.
+- It involves creating a supervised finetuning dataset (SFT), upon which the model is trained. These datasets can be for tasks such as translation, summarization, coding, etc. 
+- The SFT will have proper instructions for the model to generate the required answer for the task at hand.
+- In post-training, human effort is spent in curating the datasets for different tasks which make the model smarter in those domains.
+
+Large models can generally be trained to do more number of tasks. According to the chinchilla law of scaling, if you double the number of parameters, the model can learn square root of the number of tasks.
+
+Training-Time Scaling is the technique where we spend compute once, and bake all the knowledge into the weights. A bigger model with more data generally produces better output.
+It provides fixed cost at inferencing, but the model cannot adapt compute based on query complexity. It's also expensive to change after training.
+
+Inference time compute scaling refers to the technique where models are allowed to think or generate reasoning tokens during inferencing. Due to this, a reasonably good model can
+be steered towards generating responses that humans prefer. This way we can shift some of the compute budget meant for training to inference, while still maintaining the required accuracy. With this, we spend compute per query,
+think harder on hard problems, and higher latency + compute cost per query. However, we get the ability to do adaptive scaling, and no retraining is needed for newer queries. 
+
+Four ways to scale inference compute:
+
+- Chain-of-Thought and Extensive thinking: Some amount of thinking budget is given to the model. When a request is initiated, the model generates a set of thinking tokens, and these tokens are used to generate the final answer. This is useful for math, code, multi-step logic, etc. But it's wasteful for simple problems.
+In chain-of-thought prompting, the model generates reasoning behind an answer before producing the final answer. This was shown to improve output quality. To enable this, reasoning datasets were created for post-training of these models.
+- Best-of-N-Sampling: The model generates N responses instead of one. Create a lightweight reward model that scores which is the best response. Easy to implement and extremely paraalelizable, but the gains increase as log-scale as N grows.
+- Tree/Beam Search over Reasoning: When a query comes, we keep k number of partial reasoning parallel paths at each step (n number of depth steps). Standard NLP decoding adapted to reasoning. This is the beam search. The compute is bounded by K x Depth Steps. At each step we prune the paths which are not promising.
+Then came Monte-Carlo Beam Search where we generate many rollouts at each step and choose the ones which produce the best scores. This is used in AlphaCode, rStar-Math, etc.
+- Verifiers/Reward Models: The modern models use Process Reward Models (PRM), which score each reasoning step and guides the tree to the final answer. It has a dense signal througout the chain of thought. However, it is expensive to train and harder to generalize across domains.
+There is also Outcome Reward Model (ORM) which scores only the final answer. Works well when ground-truth is available and used in Best=of-N selection. However, there is no signal in the intermediate steps and can't guide search during generation.
+
+Adaptive Compute: Think more on hard problems:
+- Quality-Cost Tradeoff: Reasoning budget should not be spent on easy queries. An efficient router should be in place which can activate thinking only when required.
+- Latency Budget: Higher number of thinking tokens increase wall-clock time, hampering user experience. TTFT becomes an important factor.
+Thus, we use these two levers to manage user experience and allocate thinking budget for these tasks.
+
+Ways to interact with an LLM:
+- Zero-shot/Few-Shot learning - Prompt Engineering - Manual or Machine generated prompts - no model weights are changed.
+- Fine-Tuning: Update LLM weights on particular dataset - post-training - parameter efficient fine-tuning (PEFT) using LoRA, Adapters - RLHF (RL with Human Feedback), RLVR (RL with Verifiable Rewards), RLAIF (RL with AI Feedback) - only done with open source models.
+Most tasks (99.9%) can be done with context engineering, and no post-training required.
+
+Instruction Fine-tuning with RLHF:
+- Prompts with instructions can lead to better outputs since they guide the model exactly how to achieve a goal as well as produce structured outputs. However, models need to be trained to understand any kind of instructions and adhere to the user's intentions.
+- Supervised fine-tuning has challenges in collecting data at scale, and it can only take you so far.
+- For instruction fine-tuning, we collect demonstration data and train a supervised policy.
+- Then we collect comparison data and train a reward model. This can be small model like BERT which can accurately classify an output into some buckets. This reward model will replace a human to update the status of the generated responses.
+- Then we optimize a policy against the reward model using reinforcement learning.
+
+What is Re-Inforcement Learning?
+- The goal is that if the reward model classifies an output as wrong, then the weights and biases should be penalized such that negative responses are minimized and positive responses are maximized.
+- An RL agent takes an action in an environment. The environment returns some rewards and observations for that action. The agent has to be trained in such a way that the environment provides better rewards.
+- 5 key concepts: Agent, Environment, State (Observation), Action, and Reward.
+- The LLM will be provided a prompt and it will asked to complete it. The reward model will score the output based on how much a human would like or dislike that output.
+- Using RL algorithms like Proximal Policy Optimization (PPO) or Grouped Reward Policy Optimization (GRPO) the weights and biases of the model are updated. This is different than cross entropy loss since we don't have any ground-truth here.
+The entire update is based on a reward model's feedback on the generated output.
+- RL is needed because it is tough to get supervised fine-tuning data. It's easier to train a reward model with human feedback. 

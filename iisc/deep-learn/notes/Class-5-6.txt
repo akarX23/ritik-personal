@@ -51,7 +51,62 @@ Stochastic Gradient Descent:
 The goal of training is to get a robust fit where the model is neither overfitted or underfitted.
 
 Hyper Parameter Tuning:
+- Algorithmic Hyperparameters and Model Hyperparameters.
 - Define multiple hyper parameter combinations.
 - Perform cross-validation across all combinations.
 - Select the set of hyper-parameters which give the best accuracy.
 
+A language model is any model that can predict the next token from an input sequence (converted to embeddings). A language model captures the latent space of language (it's statistical nature).
+Large Language Models are trained on trillions of tokens and contain billions of parameters. These models have emergent capabilities and can perform tasks they were not explicitly trained to do.
+Multiple decoder blocks work together to generate a probability mask across the entire vocabulory and the token with the highest probability is taken as the next output.
+
+Self-Attention:
+- Core algorithm in a transformer that helps understand context.
+- Key idea: Some part of the inputs are more  important than other parts. Model should pay more attention to such parts of the sentence.
+- We need to adaptively change the word vector in the embedding space to reflect the current context.
+- Initially, we have one representation of all tokens as their embeddings. Once an input comes, we change the repsentation of the words to reflect the context contained in the words around it. This change happens through self-attention.
+
+Steps in self-attention:
+- Compute releancy score of each word with respet to the other word. This is done by taking a dot product of each word's embedding with every other word.
+At the end, you get a matrix of scores for each word vector.
+- These scores are scaled and softmaxed to get our attention score matrix.
+- Compute the sum of all word vectors, weighted with attention scores, to get a new context-aware vector for all words in the sequence.
+- However, there is no parameters that we are learning here. But deep learning is all about learning some weights and biases.
+
+The QKV Mechanism for attention:
+- We pick the embeddings for the tokens from the vocabulory.
+- Each input vector is converted to a query, key, and value vector through a dense layer. This dense layer has the query, key, and value weight matrices. The input vector is multiplied with these weight matrices to get the query, key, and value vectors.
+- The weight vectors are of size d_model x d_k, d_model x d_k, and d_model x d_v respectively. The query and key vectors are of the same size, while the value vector can be of a different size.
+- All the three QKV vectors are generated in parallel from the same input. These weight matrices are learned during training.
+- The QKV model is inspired by search engines.
+- The query vector is multiplied with each key vector to get a relevancy score.
+- To make this score less than 1, we divide the score by the square root of the dimension of the key vector (d_k).
+- The attention score is then calculated by applying softmax to the relevancy scores.
+- The value vectors are then multiplied by the attention scores to get the output vector for each token.
+- These vectors are all added together to get the final output vector for each token. This output vector is a context-aware representation of the token, which can be used for further processing in the transformer model.
+- Z_i = Sum of (softmax(q_i . k_j / sqrt(d_k))) * v_j for all j in the sequence length.
+- The W_k, W_q, and W_v matrices are learned during training and are crucial for the model to learn how to attend to different parts of the input sequence effectively.
+- The transformation of the input sequence to q,k,v vectors is the learnable part of attention.
+
+Masked Self-Attention or Causal Self-Attention:
+- When we have an input sequence, we convert it into it's embedding form using the embeddings in the vocabulory. This is the first layer of the transformer.
+- The second layer is the self-attention layer, where we compute the QKV vectors for each token in the sequence. The attention scores are calculated as described above.
+- However, in this approach, when we calculate the attention scores for each token, we allow it to see the tokens appearing after it. This causes information leakage and the model can cheat by looking at the future tokens to predict the next token.
+- To prevent this, we use masked self-attention, where we mask the attention scores for the tokens appearing after the current token. This is done by setting the attention scores for those tokens to negative infinity, which effectively makes their contribution to the output vector zero after applying softmax.
+- The Z_i summation at the end will only include the tokens from 1 to i, ensuring that the model can only attend to the previous tokens in the sequence when predicting the next token.
+
+Multi-Head Attention:
+- In MHA, the entire embedding dimension is divided equally into multiple heads. Each head has its own set of W_k, W_q, and W_v matrices, which are learned independently during training.
+- Each head computes its own attention scores and output vectors as described in the self-attention mechanism. The output vectors from all heads are concatenated together at the end as the final output of the multi-head attention layer.
+- These heads can be operated independently and parallely, which increase performance and also allows the model to learn different aspects of the input sequence through different heads. Each head can focus on different parts of the input sequence, allowing the model to capture a wider range of dependencies and relationships between tokens.
+- There are a few dense layers after the MHA layer, which are also learnable.
+
+Positiional Encoding:
+- In an input sequence, the same token can occur in multiple positions, with changing contexts. In such cases, only have a fixed embedding is not enough, we also need to encode the position of the token in the sequence. This is done through positional encoding.
+- The positional encoding is added to the token embeddings to create a new representation that includes both the token information and its position in the sequence.
+- This allows model to differentiate between the same token, occuring in different positions, and capture context effectively.
+- The positional embedding is the same dimension as the token embedding, but only contains the positional information. The positional embedding are learned through a dense layer.
+
+A MMHA and the dense layers after it are called a decoder block. A transformer model consists of multiple such decoder blocks stacked on top of each other. Each block learns to capture different aspects of the input sequence, allowing the model to learn complex relationships and dependencies between tokens in the sequence.
+It is called a decoder block since we use a masked multi-head attention and generate the output in an auto-regressive manner, i.e, we generate one token at a time and feed it back to the model to generate the next token. 
+In an encoder block, we use normal multi-head attention and the output is generated in a non auto-regressive manner, i.e, we generate the entire output sequence at once.
