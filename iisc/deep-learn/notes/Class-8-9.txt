@@ -1,0 +1,181 @@
+# Subject: Deep Learning and Generative AI
+# Class Dates: 31st May, 4th June 2026
+
+What is an Agent?
+- Agentic systems can go from augmented LLMs to fully autonomous systems.
+- At the lower end we have LLMs with memory and tools, while at the higher end we have AI systems with the capability to percieve, plan, evaluate, and act.
+- Agents can also have other agents as tools, which can be used to solve complex problems.
+- An agentic system comprises of an LLM which follows a loop of perceiving, evaluating, planning, and acting. It is goal-directed, works towards a particular objective. 
+It has the capability to plan in a multi-step manner and responds to feedback and errors in the environment. It can also use tools to accomplish its goals.
+
+Agentic Patterns:
+- Pattern are reusable and named solutions towards solving problems. They are used to identify how LLMs should relate to a particular use-case.
+- Knowing patterns lets us match structure to a problem, and not guess through them.
+
+Spectrum of Autonomy:
+- None: A simple chat based interface with no memory or tools.
+- Augmented LLM: An LLM with memory and tools, but limited autonomy. It can be used to solve problems, but it requires human input to do so.
+- Workflow: Orchestrated multi-step LLM calls which are called in a pre-determined workflow. It has more autonomy than an augmented LLM, but it is still limited in its ability to adapt to changing circumstances.
+- Autonomous Agents: AI system which have the ability and independence to use all tools and resources at their disposal to achieve a goal. They can perceive, plan, evaluate, and act in a dynamic environment. They have the ability to adapt to changing circumstances and can learn from their experiences.
+
+Levels of Agentic Systems:
+- Leven 1: Augmented LLM: An LLM with memory and tools, but limited autonomy. It can be used to solve problems, but it requires human input to do so.
+- Level 2: Workflow: Orchestrated multi-step LLM calls which are called in a pre-determined workflow. It has more autonomy than an augmented LLM, but it is still limited in its ability to self-direct.
+- Level 3: Autonomous Agent: They pursue open-ended goals, and work in self-directed loops.
+- Always start with the simplest agentic system that can solve the problem, and then iterate and add more autonomy as needed.
+
+Level 1: Augmented LLM:
+- LLM enhaned with tools, memory, output.
+- Responds to a single prompt, but can reach beyond its context.
+- Tools can be API calls, web search, code execution, etc.
+- Output structure: JSON, text, etc.
+- Memory can be short-term (within the conversation) or long-term (persisted across conversations).
+- Example: A customer support chatbot that can access a knowledge base and provide answers to customer queries
+
+Tool Calling Mechanism:
+- Tool descriptions are part of the prompt, and the LLM decides when to call a tool based on the input and the context.
+- Tool calling is synchronous: The LLM waits for the tool to return a response, which is injected into the context, and then the LLM continues processing.
+- Parallel tool calls are possible.
+- Developer should handle failed tool calls.
+
+LLM Call and Structuring Prompts:
+- System Prompt: Identity, behaviour, constraints.
+- User Prompt: Task description, input data, format instructions.
+- Assistant Prompt: Output from the LLM, which can include tool calls and responses. (Few-shot examples)
+- Tool Description
+- Tool Results: The output from the tool, which is injected back into the context for the LLM to use in its reasoning and response generation.
+- Retrieved Context: Information from different sources being retrieved and injected into the context for the LLM to use in its reasoning and response generation.
+- CoT Prefix: Prime reasoning by asking the LLM to think step by step before giving the final answer.
+
+Level 2: Workflow:
+- Orchestrated multi-step LLM calls which are called in a pre-determined workflow.
+- The control flow is designed by the engineer, and the LLM is called at each step to perform specific tasks.
+
+Patterns in Workflow:
+- Prompt Chaining: Output of one LLM call is used as input for the next LLM call. This allows for multi-step reasoning and complex task decomposition. Guardrails can be put between calls to determine if the output follows a certain level of quality.
+- Routing: The router LLM figures out user intent, and directs the flow to specializde agents based on the task. It chooses a workflow from a set of pre-defined workflows, and then executes that workflow.
+- Parallelization: Several independent tasks are called in parallel to reduce latency. These are passed onto an aggregator which combines the results and produces a final output.
+- Orchestrator-Worker: An orchestrator LLM breaks down a complex task into smaller sub-tasks, and assigns them to worker LLMs which specialize in those tasks. A synthesizer LLM then combines the outputs from workers, checks if the desired result is achieved, and produces the final result.
+The handler list is dynamic. The flow of LLMs can change based on the synthesizer's evaluation of the worker outputs. This allows for more flexibility and adaptability in the workflow. Plan can change based on intermediate results.
+Complex coordinated work. 
+- Evaluator-Optimizer: Generator produces output, an evaluator scores it. If score is below threshold, evaluator gives actionable feedback. This runs in a loop until satisfaction. The evaluator design is crucial.
+It can be a rule-based system, a learned model, or even a human in the loop. The evaluator prompt is important as vague rubrics produce useless feedback. Stopping condition can be threshold-based or round-based or HITL based.
+
+Level 3: Autonomous Agent:
+- They pursue open-ended goals, and work in self-directed loops.
+- Control-flow is determined dunamically - the agent decides which actions to take based on its perception of the environment and its internal state.
+- Appropriate for long-horizon, ambiguous tasks where the path to the solution is not clear.
+- Tools Available: Perception tools (web search, APIs, databases), Action tools (code execution, robotic control), Internal tools (memory access, self-reflection).
+- Key Requirement: Robust error-handling, state-persistance, and human oversight.
+
+Single-Agent Patterns:
+- One LLM in a loop with tools and memory.
+- ReAct: Reasoning and Acting in alternating steps. The agent reasons about the task, decides on an action, executes it, observes the result, and then reasons again based on the new information. This allows for dynamic decision-making and adaptability.
+- Reflection: The agent periodically reflects on its past actions and outcomes to improve future performance. This can be implemented by making the agent generate a summary of what it has done so far, and use that for future actions. This allows the agent to learn from its experiences and adapt its behavior over time.
+- Plan-and-Execute: Plan upfront, then act.
+- Useful when tasks fit in one context window.
+
+Multiple-Agent Patterns:
+- Multiple agents working together, each with their own tools and memory, and communicating with each other to achieve a common goal.
+- Hierarchical: Orchestrator + Workers. This is similar to a routing workflow.
+- Peer-to-Peer: Multiple agents with equal capabilities, collaborating and communicating to solve a problem. They can share information, delegate tasks, and provide feedback to each other. This allows for more complex problem-solving and can leverage the strengths of different agents.
+- Adversarial: Critic challenges the generator to improve output quality. The critic provides feedback to the generator, which then uses that feedback to produce better outputs.
+- Assembly Line: Each agent performs a specific step in a pipeline, passing the output to the next agent. This is useful for tasks that can be decomposed into distinct stages, such as data processing, analysis, and reporting.
+- Useful when tasks exceed a single agent's context window or require diverse capabilities.
+
+Single Agent - ReAct Pattern:
+- ReAct interleaves reasoning traces with tool actions.
+- The LLM thinking tokens become part of the prompt, which allows the model to verify themselves, and self-correct if needed.
+- Works well with verifiable tasks where the agent can check the correctness of its actions using tools. For example, a math problem where the agent can use a calculator tool to verify its calculations.
+- Errors can compound if early reasoning is wrong.
+- Agent can go into an infinite loop if it keeps making the same mistake and doesn't have a stopping condition like max iterations.
+
+Single Agent - Reflection Pattern:
+- The agent periodically reflects on its past actions and outcomes to improve future performance.
+- No separate evaluator is needed, all done by the same agent in one context window.
+- Effective for creative writing, core reviews.
+- Limit revision rounds to optimize for latency and cost.
+
+Single Agent - Plan-and-Execute Pattern:
+- Planning and Execution are separate phases.
+- Agent first produces a plan and executes it in subsequent steps.
+- This allows for plan inspection and approval before execution, which can be useful for high-stakes tasks.
+
+Memory in Single Agent Systems:
+- In-Context Memory: Information in the current context window, lost after the session.
+- External Memory: Vector DBs, or databases. Agent retrieves relevant information.
+- Episodic Memory: Prior conversations are summarised and stored. Needs compression. Allows continuity between sessions.
+- Procedural Memory: System prompts, tool descriptions, etc. Baked in, not retrieved.
+
+When to choose which single-agent pattern?
+- ReAct: Step-by-Step lookup or research.
+- Reflection: Creative tasks, or tasks with subjective quality where self-evaluation is useful.
+- Plan-and-Execute: High-stakes tasks where plan inspection is needed, or tasks that require a clear separation between planning and execution.
+- External Memory + ReAct: Needs facts beyond context window, but still benefits from step-by-step reasoning.
+- Episodic Memory: Continuity across sessions, learning from past interactions.
+- Augmented LLM: Simple Q&A, no external data needed.
+
+Problems with Single Agent Systems:
+- Context Limits: Complex tasks may exceed the context window, leading to loss of information and reasoning capabilities.
+- Lack of Specialization: A single agent may not be able to perform well across diverse tasks, leading to suboptimal performance.
+- Parallelism: Single agent cannot perform multiple tasks simultaneously, leading to increased latency for complex workflows.
+- Error Isolation: Failure in one agent does not cascade to other agents if architectures have fallbacks.
+- Verifiability: Dedicated evaluator agent can provide more reliable and consistent evaluation than self-reflection, which can be biased or lack objectivity.
+- Scale: As tasks become more complex, a single agent may struggle to manage all aspects of the problem, leading to decreased performance and increased likelihood of errors.
+
+Multi-Agent Coordination Patterns:
+- Hierarchical: Orchestrator + Workers. This is similar to a routing workflow.
+- Peer-to-Peer: Multiple agents with equal capabilities, collaborating and communicating to solve a problem. They can share information, delegate tasks, and provide feedback to each other. This allows for more complex problem-solving and can leverage the strengths of different agents.
+- Adversarial: Critic challenges the generator to improve output quality. The critic provides feedback to the generator, which then uses that feedback to produce better outputs.
+- Assembly Line: Each agent performs a specific step in a pipeline, passing the output to the next agent. This is useful for tasks that can be decomposed into distinct stages, such as data processing, analysis, and reporting.
+
+Shared Context and State Management:
+- Blackboard/Shared memory: All agents read/write to the same memory space, but requires locking to prevent conflicts.
+- Message Passing: Agents communicate by sending messages to each other. Standard A2A protocol.
+- State Summarisation: At each handoff, a summary node compresses state for the next agent, reducing cost.
+- Event Streaming: Agents publish events to a stream, and other agents subscribe to relevant events. This allows for decoupled communication and can handle dynamic agent interactions.
+
+Recommendations in Agentic AI:
+- Default to the simplest system that solves the problem. Each additional agent brings in complexity, cost, latency - justify it.
+- For simple Q&A and basic retrieval - use a single LLM with zero overhead and deterministic.
+- Fixed data transformation - Deterministic pipeline- faster, cheaper, auditable
+- Known retrieval task - RAG pipeline - no loop
+- Structured extraction from doc - Augmented LLM (schema output)
+- Latency bound - avoid agents - each hop is 1 sec additional latency
+- No HITL - avoid autonomous agents - irreversible actions - blast radius
+- To justify the usage of agents, justify it with business needs such as accuracy, cost, latency - evaluate with and without agents
+
+Common Pitfalls - Unbounded Loops:
+- An agent that never terminates, indefinitely runs in a loop.
+- Caused by no max_iterations cap. Stopping condition depends on LLM reasoning.
+- Can also be caused by circular dependencies between tools.
+- Fixed by setting a hard-limit on iterations, using deterministic stopping from tool output, timeouts at infrastructure level, and logging step count with alerts on suspicious patterns.
+
+Common Pitfalls - Cascading Failiures:
+- A bad output from one agent degrades quality down the pipeline and the final answer is wrong for non-obvious reasons.
+- Prevented by adding validation checkpoints between agents - output schema check, confidence score.
+- Use a critic or evaluator agent before passing the output downstream.
+- Design agents to detect uncertainty rather than silently passing outputs.
+- Stress test the system with known bad-inputs to verify failure propagation is caught.
+
+Common Pitfalls - Context Mismanagement & Tool Trust:
+- Multi-hop agents increase context which can lead to overflow and LLMs hallucinating. Solve this by summarising state across calls, evict stale tool results, use external memory for long runs.
+- Prompt injection can be done via tool outputs. Sanitise outputs before using them in the LLM, apply input validation.
+- Tool Trust without Verification can be hazardous as agents trust tool output as ground truths. Add confidence checks and never use tool outputs without verification.
+- State reset between hops can happen accidently. Treat agents as additive and pass the accumulated context at each hop.
+
+Anti-Patterns in Agentic Systems:
+- Over-Orchestration: Using too many agents for tasks that can be handled by smaller agents. Adds latency, coordination overhead with no benefit.
+- Prompt Sprawl: Unnecesarily long, unreviewed system prompts. Leads to inconsistent agent behaviour.
+- No HITL for irreversible actions.
+- Treating LLM as Oracle and passing reasoning without verification.
+- Agent Soup: Adding more agents to fix a problem whose root cause might be a bad prompt or bad data. Complexity hides the real issue.
+
+Autonomous agents handling high-stake tasks without HITL is the riskiest anti-pattern. We should classify every tool based on reversability factor. For irreversible tools, always require human approvals by providing a summary to the human on what the agent will do. Log all irreversible actions for post-hoc audit.
+
+The minimum viable agent:
+- Build a single LLM call first.
+- Add tool if context is insufficient.
+- Add a loop only if single pass fails - ReAct or Reflection loop.
+- Add multiple agents only for scale and specialisation. 
+- Add autonomy only after building trust. Start with read-only agents and expand to write actions after thorough testing.

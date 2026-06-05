@@ -1,0 +1,29 @@
+# Subject: Deep Learning and Generative AI
+# Class Dates: 31st May, 4th June 2026
+
+Agentic patterns are reusable, named ways to structure LLM systems for a task. The core rule is to start with the simplest pattern that works, then add autonomy only when needed.
+
+Single-agent patterns:
+- ReAct: interleave reasoning and tool use; good for step-by-step lookup and verifiable tasks.
+- Reflection: the same agent reviews and improves its own output; useful for creative or quality-focused work.
+- Plan-and-Execute: create a plan first, then execute; useful when plans need inspection before action.
+
+Workflow patterns (engineer-defined control flow):
+- Prompt chaining: one LLM output feeds the next step.
+- Routing: a router selects a specialized path based on intent.
+- Parallelization: independent tasks run in parallel, then aggregate.
+- Orchestrator-worker: an orchestrator decomposes work into sub-tasks, workers solve sub-tasks, a synthesizer combines and validates.
+- Evaluator-optimizer: generate, score, give feedback, and iterate until a threshold or stop rule.
+
+Multi-agent coordination patterns:
+- Hierarchical (orchestrator + workers) - similar to a routing workflow but with multiple task-specific models.
+- Peer-to-peer collaboration - multiple agents with different expertise collaborate on the same task, sharing information and iterating together.
+- Adversarial (critic vs generator) - one agent generates content while another critiques it, encouraging improvement through competition.
+- Assembly line pipelines - tasks are divided into sequential stages, with each agent responsible for a specific stage, sending output to the next agent in the line.
+
+Common pitfalls across patterns: unbounded loops, cascading failures, context overflow, prompt injection through tool outputs, and blind trust in tools. These can be controlled using max-iteration caps, validation checkpoints, confidence checks, state summaries, and deterministic stopping.
+
+For high-stakes or irreversible actions, keep human oversight in the loop. Avoid over-orchestration and “agent soup”. Add agents only when scale or specialization clearly justifies the cost, latency, and complexity.
+
+I have tried categorizing these patterns in our course project, through which it becomes easier to achieve the required goal while keeping the flow as deterministic as possible.
+These patterns will be very helpful in designing future solutions and justifying each LLM call to the stakeholders.

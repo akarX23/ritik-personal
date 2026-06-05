@@ -1,5 +1,5 @@
 # Subject: Deep Learning and Generative AI
-# Class Dates: 23ed May 2026
+# Class Dates: 23rd May, 28th May 2026
 
 Steps in a Transformer architecture:
 - Input sequence of tokens.
@@ -114,4 +114,63 @@ What is Re-Inforcement Learning?
 - The LLM will be provided a prompt and it will asked to complete it. The reward model will score the output based on how much a human would like or dislike that output.
 - Using RL algorithms like Proximal Policy Optimization (PPO) or Grouped Reward Policy Optimization (GRPO) the weights and biases of the model are updated. This is different than cross entropy loss since we don't have any ground-truth here.
 The entire update is based on a reward model's feedback on the generated output.
-- RL is needed because it is tough to get supervised fine-tuning data. It's easier to train a reward model with human feedback. 
+- RL is needed because it is tough to get supervised fine-tuning data. It's easier to train a reward model with human feedback.
+
+Preference Fine-Tuning:
+- Since SFT is very expensive, model developers employ a technique where they ask humans to label preference from different model outputs.
+- These preferences are collected as a dataset, and a small language model is trained on these preferences to classify model generated outputs like a human would have. BERT is a popular choice. Such models are called reward models.
+- Verifiable rewards is a deterministic structure (not a model) which classifies whether model output is correct or not based on some rules, and based on its output we update model weights and biases.
+- The power of reinforcement learning is that even with noisy reward structure, the language model is still able to reliably learn.
+
+Context Engineering:
+- A model needs good instructions and context to properly execute a task.
+- Two dominating patterns exist to provide context to an LLM: RAG and Agents (perceive, plan, act, verify using tools and environment)
+- RAG has evolved in 3 stages: Naive RAG, Hybrid RAG, Agentic RAG
+- Naive RAG includes taking a prompt, retrieving relevant information from the document or database, and directly pass that information to the LLM to generate the output.
+- Two types of Retrieval Methods:
+-- Sparse OR Term-based OR Lexical Retrieval: Here we search for terms in the prompt and context that match exactly. It's sparse since it uses OHE for doing a word-based match. However, a user's prompt might not always use the exact same word to define something, due to which those things might  get missed.
+It used Term Frequency and Inverse Document frequency (TF-IDF) to calculate scores between documents and queries. Tokenization is necessary here, so if the user asks the same question in a lot of ways, then this might not work.
+A lot of use cases didn't need retrieval as such, and Elasticsearch or BM 25 were were enough.
+-- Dense OR Embedding OR Semantic Retrieval: Here, the documents are indexed by splitting them and creating embeddings out of them. These are stored in a vector database. Now, if a user query comes, 
+a similarity check is done along with some other diversity preserving heuristics between the query and the embedding chunks. The most relevant chunks are added to the prompt and passed to the LLM. 
+
+How does Retrieval work?
+- Data is chopped into chunks and stored in the vector database.
+- THe query embedding is compared to all the chunks, and the top-k similar chunks are returned. 
+- We calculate maximum marginal relevance, which is a heruristic that tells how important a chunk is for that query based on how relevant it is to other chunks. This is done so that we don't end up taking similar chunks in the top-k.
+- Popular Retrieval Algos: LSH, HNSW, Product Quantization, IVF, Annoy
+
+Why does Naive RAG fail?
+- It's single hop only and doesn't work when synthesis is required across multiple chunks.
+- Lexical gap since words can appear in many ways.
+- No reranking to sort the chunks based on relevance to the query.
+- No evaluation to measure retrieval quality.
+
+Hybrid Search:
+- Creates one chunk list from BM25 word matching and one list through embedding search.
+- These are then combined through techniques like reciprocal ranked fusion, which increases accuracy. This is the production standard.
+
+How does Re-Ranking work?
+- Stage 1 uses a simple vector cosine similarity search to get a list of top-100 (for example) chunks. This is fast and scales to millions.
+- Stage 2 uses a precise cross-encoder to give much higher precision and a small list like top-5 chunks. This is slow.
+
+Query Rewriting & HyDE:
+- User will ask a question, which maybe a short prompt.
+- The LLM will be asked to rewrite the query in a more detailed way, which will help in better retrieval. This is called query rewriting.
+- HyDE is the technique where a LLM will generate hypothetical answers to the user query.
+- These hypothetical answers contain more context about the question user is trying to ask.
+- Embeddings are created for these answers, and these are used to retrieve chunks from the vector database. These chunks are used to generate the final answer for the user query. 
+This is shown to be more effective than just using the original user query for retrieval, as it provides more context and helps in better matching with the relevant chunks in the database.
+
+Evaluation Framework: RAGAS
+- Faithfulness: Does the model hallucinate or adhere to the given context.
+- Answer Relevancy: Does the answer address the actual question asked?
+- Context Precision: Are the retrieved chunks relevant to the query?
+- Context Recall: Did the retrieval find all the chunks needed to answer correctly?
+
+Agentic RAG Flow:
+- Complex user query is decomposed into multiple easier sub-queries.
+- These queries are run by sub-agents in parallel, each of which have access to different tools to do their tasks. The agent knows how to use these tools through MCP and when to use them.
+- This is called Query Decomposition.
+- Self-Correction pattern: Retrieve chunks from the vector DB and pass through a relevance evaluator which checks if the retreived chunks answer the question, or there are contrdictions.
+- Based on that, a confidence score is generated. A high score will accept the chunks as it is. A medium score will require additional web search. A low score will discard those chunks.  
