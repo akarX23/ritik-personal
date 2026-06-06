@@ -179,3 +179,44 @@ The minimum viable agent:
 - Add a loop only if single pass fails - ReAct or Reflection loop.
 - Add multiple agents only for scale and specialisation. 
 - Add autonomy only after building trust. Start with read-only agents and expand to write actions after thorough testing.
+
+The interoperability problem for agents:
+- As agents proliferate, they need some way to discover tools and other agents without specialized integrations for every pair which might induce a lot of risk and create maintainability hell.
+- Standards solve this: MCP for agent-tool interoperability, A2A for agent-agent communication.
+
+Tool use with LLMs: MCP:
+- MCP is an open standard created by Anthropic which defines a common language for LLMs to interact with tools and external data sources. It's like a USB-C port for AI where any agent can plug itself and use the source. 
+Instead of writing a custom integration for every tool an LLM might need, MCP provides a universal interface.
+- Without MCP, each app must have tools coded into it. When an LLM changes, all integrations need to be re-written. Due to this, interoperability of tools and serving tools is not possible.
+- MCP solves this by separating the concerns of capability providers (MCP Servers) from capability consumers (MCP Clients/Agents).
+
+MCP Host:
+- The application which manages user lifecycle and embeds an LLM. 
+- It manages user interaction.
+
+MCP Client:
+- This is the protocol implementation layer.
+- It lives inside the host and manages multiple connections to different MCP servers.
+
+MCP Server:
+- The actual tool/data provider.
+- It exposes tools, resources, prompts via MCP.
+
+MCP uses JSON2.0 over stdio or SSE (Streaming). The clients calls these tools and the LLMs sees the tool descriptions.
+When a user input comes in, the client attaches the MCP tool descriptions to the prompt and calls the LLM. 
+When the LLM decides to call a tool, the client calls the MCP server for that tool, collects the output and injects it back into the context for the LLM to use in its reasoning and response generation.
+The design is stateless, any client can connect to any MCP server as long as it follows compliance.
+
+MCP Primitives exposed by servers:
+- Tools: Actions that can be performed, e.g. "search", "book_flight", "execute_code".
+- Resources: Data sources that can be queried, e.g. "weather_data", "news_articles".
+- Prompts: Reusable prompt templates that can be used by the LLM, e.g. "summarization_prompt", "translation_prompt".
+
+Agent-2-Agent Protocol:
+- A2A standardises how different agents in same or different environments communicate and collaborate with each other.
+- Build with ADK, equip with MCP, and communicate with A2A to other remote agents, local agents, or humans.
+
+Layers in A2A:
+- Cannonical Data Model: Defines the core data structures and message formats that all A2A implementations must understand. These are protocol agnostic definitions expressed as Protocol Buffer Messages.
+- Abstract Operations: Defines a set of operations that A2A agents must support, independent of how they are exposed over specific protocols.
+- Protocol Bindings: Provides concrete mapping of the abstract operations and data structures to specific protocol bindings (JSON-RPC, gRPC, HTTP) including method names, endpoint patterns, and protocol-specific behaviours.
