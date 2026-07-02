@@ -25,7 +25,7 @@ Levels of Agentic Systems:
 - Always start with the simplest agentic system that can solve the problem, and then iterate and add more autonomy as needed.
 
 Level 1: Augmented LLM:
-- LLM enhaned with tools, memory, output.
+- LLM enhanced with tools, memory, output.
 - Responds to a single prompt, but can reach beyond its context.
 - Tools can be API calls, web search, code execution, etc.
 - Output structure: JSON, text, etc.
@@ -53,7 +53,7 @@ Level 2: Workflow:
 
 Patterns in Workflow:
 - Prompt Chaining: Output of one LLM call is used as input for the next LLM call. This allows for multi-step reasoning and complex task decomposition. Guardrails can be put between calls to determine if the output follows a certain level of quality.
-- Routing: The router LLM figures out user intent, and directs the flow to specializde agents based on the task. It chooses a workflow from a set of pre-defined workflows, and then executes that workflow.
+- Routing: The router LLM figures out user intent, and directs the flow to specialized agents based on the task. It chooses a workflow from a set of pre-defined workflows, and then executes that workflow.
 - Parallelization: Several independent tasks are called in parallel to reduce latency. These are passed onto an aggregator which combines the results and produces a final output.
 - Orchestrator-Worker: An orchestrator LLM breaks down a complex task into smaller sub-tasks, and assigns them to worker LLMs which specialize in those tasks. A synthesizer LLM then combines the outputs from workers, checks if the desired result is achieved, and produces the final result.
 The handler list is dynamic. The flow of LLMs can change based on the synthesizer's evaluation of the worker outputs. This allows for more flexibility and adaptability in the workflow. Plan can change based on intermediate results.
@@ -63,7 +63,7 @@ It can be a rule-based system, a learned model, or even a human in the loop. The
 
 Level 3: Autonomous Agent:
 - They pursue open-ended goals, and work in self-directed loops.
-- Control-flow is determined dunamically - the agent decides which actions to take based on its perception of the environment and its internal state.
+- Control-flow is determined dynamically - the agent decides which actions to take based on its perception of the environment and its internal state.
 - Appropriate for long-horizon, ambiguous tasks where the path to the solution is not clear.
 - Tools Available: Perception tools (web search, APIs, databases), Action tools (code execution, robotic control), Internal tools (memory access, self-reflection).
 - Key Requirement: Robust error-handling, state-persistance, and human oversight.
@@ -151,7 +151,7 @@ Common Pitfalls - Unbounded Loops:
 - Can also be caused by circular dependencies between tools.
 - Fixed by setting a hard-limit on iterations, using deterministic stopping from tool output, timeouts at infrastructure level, and logging step count with alerts on suspicious patterns.
 
-Common Pitfalls - Cascading Failiures:
+Common Pitfalls - Cascading Failures:
 - A bad output from one agent degrades quality down the pipeline and the final answer is wrong for non-obvious reasons.
 - Prevented by adding validation checkpoints between agents - output schema check, confidence score.
 - Use a critic or evaluator agent before passing the output downstream.

@@ -101,7 +101,7 @@ Multi-Head Attention:
 - These heads can be operated independently and parallely, which increase performance and also allows the model to learn different aspects of the input sequence through different heads. Each head can focus on different parts of the input sequence, allowing the model to capture a wider range of dependencies and relationships between tokens.
 - There are a few dense layers after the MHA layer, which are also learnable.
 
-Positiional Encoding:
+Positional Encoding:
 - In an input sequence, the same token can occur in multiple positions, with changing contexts. In such cases, only have a fixed embedding is not enough, we also need to encode the position of the token in the sequence. This is done through positional encoding.
 - The positional encoding is added to the token embeddings to create a new representation that includes both the token information and its position in the sequence.
 - This allows model to differentiate between the same token, occuring in different positions, and capture context effectively.

@@ -18,7 +18,7 @@ The text corpus data is used to train by taking a few tokens at a time and gener
 between the predicted token and the actual token. Each transformer layer has paramerets as the Q,K,V weight matrices and the feed-forward layer weights. The LM Head at the end also has parameters. 
 
 The learning happens through a mechanism called error backpropagation. It contains a step called autograd, in which the gradients of the error are calculated wrt all the parameters in all the layers.
-Autograd works in the following wayL
+Autograd works in the following way:
 - Calculate the loss for a given input sequence and the predicted output in the output layer.
 - Calculate the gradient of the loss wrt to the parameters in the layer just before the output layer. 
 - The chain rule is used to use the gradients in the current layer to calculate the gradients for the parameters in the previous layer. This is done all the way back to the embedding layer, which is the first layer of the transformer. This way, we get the gradients for all the parameters in all the layers.
@@ -84,11 +84,11 @@ Four ways to scale inference compute:
 
 - Chain-of-Thought and Extensive thinking: Some amount of thinking budget is given to the model. When a request is initiated, the model generates a set of thinking tokens, and these tokens are used to generate the final answer. This is useful for math, code, multi-step logic, etc. But it's wasteful for simple problems.
 In chain-of-thought prompting, the model generates reasoning behind an answer before producing the final answer. This was shown to improve output quality. To enable this, reasoning datasets were created for post-training of these models.
-- Best-of-N-Sampling: The model generates N responses instead of one. Create a lightweight reward model that scores which is the best response. Easy to implement and extremely paraalelizable, but the gains increase as log-scale as N grows.
+- Best-of-N-Sampling: The model generates N responses instead of one. Create a lightweight reward model that scores which is the best response. Easy to implement and extremely paralelizable, but the gains increase as log-scale as N grows.
 - Tree/Beam Search over Reasoning: When a query comes, we keep k number of partial reasoning parallel paths at each step (n number of depth steps). Standard NLP decoding adapted to reasoning. This is the beam search. The compute is bounded by K x Depth Steps. At each step we prune the paths which are not promising.
 Then came Monte-Carlo Beam Search where we generate many rollouts at each step and choose the ones which produce the best scores. This is used in AlphaCode, rStar-Math, etc.
 - Verifiers/Reward Models: The modern models use Process Reward Models (PRM), which score each reasoning step and guides the tree to the final answer. It has a dense signal througout the chain of thought. However, it is expensive to train and harder to generalize across domains.
-There is also Outcome Reward Model (ORM) which scores only the final answer. Works well when ground-truth is available and used in Best=of-N selection. However, there is no signal in the intermediate steps and can't guide search during generation.
+There is also Outcome Reward Model (ORM) which scores only the final answer. Works well when ground-truth is available and used in Best-of-N selection. However, there is no signal in the intermediate steps and can't guide search during generation.
 
 Adaptive Compute: Think more on hard problems:
 - Quality-Cost Tradeoff: Reasoning budget should not be spent on easy queries. An efficient router should be in place which can activate thinking only when required.
