@@ -1,0 +1,28 @@
+Topic: Introduction to Managerial Economics
+Date: 12th August 2026
+
+Who is a Manager?
+A Manager directs resources - labour, capital, raw materials and time - to achieve a specific outcome. They set price, quality, and output decisions, and are accountable for revenue exceeding cost.
+
+Economics is the study of scarcity and its implications - for how resources are used and how production and welfare grow overtime.
+
+Microeconomics considers individual units such as a single company or firm or when someone buys iPhone over android.
+
+Macroeconomics takes multiple units of microeconomics and looks at the economy as a whole, such as GDP, inflation, and unemployment rates.
+
+Managerial Economics is the application of economic theory and quantitative methods to analyse business decisions under scarcity, uncerainity, and competition. It helps make decisions (technical or not), which are directly responsible for economic consequences.
+
+Functional Ares where ME applies:
+- Marketing: Pricing, Elasticity, Advertising
+- Operations: Supply Chain, Market Structures
+- Finance: Rist and Uncertainty
+- Public Policy: Regulation and Externilities
+
+Six Principles of Effective Management:
+- Identify Goals and Constraints.
+- Recognize the nature and importance of profits.
+- Understand producer and consumer incentives.
+- Understand Markets - Competitive, Monopoly, etc.
+- Recognize time value of money.
+- Use marginal analysis to make decisions.
+
