@@ -1,0 +1,55 @@
+Topic: Time value of Money
+Date: 22nd August 2026
+
+Competitive Markets:
+- Many buyers and sellers, with no single entity able to influence the market price. Prices are determined by supply and demand forces. Example: Stock markets.
+
+Non-Competitive Markets:
+- Few sellers or a single seller, with the ability to influence prices. Eg: Monopoly (Indian Railways), Google Search Engine.
+
+Types of Rivalries in markets:
+- Consumer-Producer: Buyers want low prices, producers want high prices. This is the classic supply-demand interaction.
+- Consumer-Consumer: Buyers compete against each other for limited goods or services. Example: Bidding wars in auctions.
+- Producer-Producer: Firms compete against each other for market share, resources, and customers. Example: Smartphone manufacturers.
+- Government & the Market: Rules that shape how other rivalries play out.
+
+Value of currency today vs value of currency tomorrow. Money has a time dimension which influences decisions like investing, saving, and borrowing.The interest rate tells us if the currency moves forward in time or backward. Money gaining interest compunds over multiple years.
+
+Future Value (FV) = PV * (1 + r)^n
+Where:
+- PV = Present Value
+- r = interest rate per period
+- n = number of periods
+Present Value (PV) = FV / (1 + r)^n
+Net Present Value (NPV) = PV of Cash Inflows - PV of Cash Outflows
+= Summation of (FV - Cash Outflow) / (1 + r)^n
+Where:
+- FV = Future Value of Cash Inflows
+- Cash Outflow = Initial Investment or Cost 
+
+NPV basically discounts the benefits received in each period from the cost incurred in the same period.
+
+Valuing an infintely lived asset are cash flows that never stops like a bond that pays indefinitely same amount every year. PV = Cash Flow / r
+Where:
+- Cash Flow = Cash received every year
+- r = interest rate per period
+
+Decision-Making in Managerial Economics:
+A decision maker takes an action iff the marginal benefit of the action is greater than the marginal cost. A marginal change is just a small change in the current plan of action. 
+
+Discrete Decisions vs Continuous Decisions:
+- Discrete Decisions: Involve distinct choices, and produced in whole units.
+- Continuous Decisions: Involve a range of choices, and can be produced in fractional units.
+
+A manager deciding how much to produce:
+- TR(Q) = Price x Quantity
+- TC(Q) = Fixed Cost + Variable Cost
+- Profit(Q) = TR(Q) - TC(Q)
+Price falls as quantity increases. This downward sloping demand curve is a result of the law of demand. The manager will produce up to the point where marginal revenue equals marginal cost (MR = MC). Total Revenue climbs as quantity increases, but at a decreasing rate. Total Cost climbs as quantity increases, but at an increasing rate. The difference between Total Revenue and Total Cost is the Profit. Firms goal is not to maximize revenue, but to maximize profit.
+
+Marginal Revenue (MR) = Change in Total Revenue / Change in Quantity - Change in total revenue on selling one more unit.
+Marginal Cost (MC) = Change in Total Cost / Change in Quantity - The change in total cost from producing and selling one more unit.
+Where MR=MC, the profits are maximized.
+
+Continuous Decisions: Profit as a smooth hill
+If outputs can be any value, then the profit is a smooth curve where the optimal point is the peak.

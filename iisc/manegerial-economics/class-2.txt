@@ -18,5 +18,3 @@ Principle: Cost, Properly Defined:
 - Explicit Cost: The actual cash out-lay.
 - Implicit Cost: No cash leaves hand, but something is given up - like time, effort, or opportunity.
 This matters more than accounting cost since accounting cost only considers money actually spent, while economic cost includes both explicit and implicit costs. Managers must consider both types of costs to make informed decisions that maximize overall value and efficiency.
-
-

@@ -1,0 +1,60 @@
+Topic: The Role of Profits in Managerial Decision-Making
+Date: 21st August 2026
+
+Profit Principle:
+Profits are a signal to resource holders about where the resources are most valued by society. Positive economic profits attract more entrants and investments; Negative economic profits signal that resource can be used better elsewhere. Zero Profit is not a failure - it signals that a firm is using its resources to earn exactly what is possible.
+
+Why should we care about Profits?
+- Two equally hard-working farmers can get very different harvests depending on what soil they use as a resource. 
+- Porter's five Forces test "soil" of an industry before you decide how much effort or capital to invest.
+- Five structural forces - entry, supplier power, buyer power, substitutes, and rivalry - together determine how much of the value industry creates actually stays as profit.
+
+Industry rivalry sits at the center - how intensely firms fight for the market share:
+- Threat of New Entry: How easily new competitors can join.
+- Bargaining Power of Suppliers: Can input providers dictate price?
+- Bargaining Power of Buyers: Can customers dictate price?
+- Threat of Substitutes: Can a different product or service replace yours?
+A combination of all above forces determine the industry's attractiveness.
+
+High barrier to entry will enable you to earn better profits and also have a stable market share. Low entry barrier will constantly attract new competitors, which will reduce your profits and market share. If suppliers increase price then the final product will also increase. 
+
+Bargaining Power of Buyers:
+Buyers can set prices when the volume is high or when buyers are concentrated, products are standardized, or when buyers can easily switch to substitutes. This reduces the profit margin for firms in the industry.
+
+The Sixth Force: Complements
+Some products make your product more valuable, and the 5 forces model does not account for this. Adam BrandenBurger and Barry Nalebuff introduced the concept of complements which are products that increase the demand of your product. Substitues and Complements are opposite economic effects. Substitues shrink demand while complements grow it. Complementarity means that you can't use one product without using the other.
+
+Macro Lens & Speed of Change:
+1) PESTEL - the macro lens of Political, Economic, Social, Technological, Environmental, and Legal factors that affect the industry. It scans the wider environment that eventually reshapes those 5 forces.
+2) Hyper-competition - the speed of change in the industry. The faster the change, the more difficult it is to maintain a competitive advantage. Firms constantly disrupt the very structure the Five Forces tries to hold still and measure.
+
+Common Criticisms of the Five Forces Model:
+1) It is static - it does not account for the speed of change in the industry.
+2) It is inward-looking - it does not account for the macro lens of PESTEL. RBV addresses this.
+3) Assumes rivalry and not cooperation - it does not account for the role of complements and partnerships. 6th force addresses this.
+4) Built for products, strained by platforms - it does not account for the network effects of platforms. Platforms are a different business model that require a different lens to analyze.
+
+It's good to apply these principles and forces at the of entering or leaving from a market, but it is also important to apply them continuously to monitor the health of your business and the industry.
+
+Principle 3: Understand Incentives
+Relevant where incentives matter a lot, like discounts, promotions, and loyalty programs. Incentives are the key to understanding how to influence behavior of both consumers and producers. If it's benefetting only one group, then it will not survive long. 
+
+Principle 4: Understand Markets
+Markets are the place where buyers and sellers meet to exchange goods and services. They determine a price for the goods and services, which is the value of the good or service in the eyes of the buyer. Markets are also where information about supply and demand is revealed.
+
+How the definition plays out: Supply, Demand, Equilibrium
+Buyer and seller pull the price in opposite directions. Buyers want to pay less, sellers want to charge more. The price at which the quantity demanded equals the quantity supplied is called the equilibrium price. Demand Curve (Downward Sloping) - meets supply curve (Upward Sloping) at equilibrium price. The equilibrium price is the price at which the quantity demanded equals the quantity supplied. If the price is above equilibrium, there will be a surplus, and if it is below, there will be a shortage.
+Prices are signals not just numbers
+- A price tells buyers and sellers how much of a good or service is available and how much is desired. It also signals the relative scarcity of a good or service, which can influence production and consumption decisions. Hayek (1945) wrote about prices aggregate the dispersed information no central planner could collect fast enough.
+- Sometimes government intervenes to correct market failures, such as externalities or public goods, which can distort the signals that prices provide. However, it's a temporary fix and only market forces can restore the balance. During Recession, governement directly sets price levels to control the economy.
+
+Market Structure Spectrum:
+- Perfect Competition: Many sellers, identical products, no barriers to entry. Firms are price takers. Example: Agriculture.
+- Monopolistic Competition: Many sellers, slightly differentiated products, some pricing power - eg Restaurants, clothing brands.
+- Oligopoly: Few large sellers, significant barriers to entry, each reactive to the competition. Example: Telecomm 
+- Monopoly: One seller, with no close substitutes, significant barriers to entry. Example: Indian Railways.
+
+Assymetric Information:
+- Buyers and sellers do not have the same information. This can lead to market failures, such as adverse selection and moral hazard. For example, in the used car market, sellers may have more information about the quality of the car than buyers, leading to a situation where only low-quality cars are sold (adverse selection).Certified used cars websites and warranties are examples of how to mitigate this problem.
+
+

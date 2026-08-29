@@ -57,3 +57,7 @@ fn pig_latin() {
 
     dbg!(output);
 }
+
+fn traits() {
+    
+}
