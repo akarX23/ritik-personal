@@ -1,0 +1,118 @@
+Topic: Consumer Behavior
+Date: 4th September, 2026
+
+Consumer behavior is the study of what drives a consumer towards consumption and the factors affecting it. However, behavior can be rational or irrational depending on various psychological, social, and economic influences.
+
+What is rationality?
+When we say that a consumer is making a rational decision during consumption, we assume a few things about their behavior. A lot of theories ahead don't work if the customer is not behaving rationally.
+
+Building blocks of consumer model:
+
+- Possibility: What products can a customer imagine or fathom? It's important to be aware of their consumption possibility set. If a person is buying a product impulsively, which they would not have even thought of under normal circumstances, then that product was not part of their original possibility set.
+
+
+- Feasibility: Which of the products from the possibility set can a consumer afford or obtain? These are budget constraints that limit the consumer's choices. This considers only income, not credit card, etc. Credit giving companies have expanded the feasibility set for consumers by providing access to credit.
+
+- Preferences: Out of the feasibile options from the possibility set, which of the products does the consumer prefer? 
+
+- Behavorial Assumption: In the given constraints and assumptions, the consumer makes choices which are systematic and predictable. This is assuming the customer is rational.
+
+However, in real life, consumers tend to be impulsive. If the set of rules and behaviors are fixed, then we should be able to predict systematically what consumers might or might not buy.
+
+Consumption Bundles:
+- A good is something that gives you some kind of a utility - not just something physical.
+- If there are n different goods (very large number), and X_i is the quantity consumed of the i-th good, then a consumption bundle can be represented as a vector X = (X_1, X_2, ..., X_n). 
+- Rather than listing goods one by one, we bundle them into a single ordered bundle.
+- The set of all such n-tuples is called a consumption set.
+
+Each X_i above is a good. Goods can be positive or negative in nature depending on whether they provide utility or disutility to the consumer. In a 2-D plane, we only ever consumer goods when they both are in the upper-right (non-negative orthant). In our consumption bundle, we assume that all X_i >= 0 for all i.
+
+Consumption Possibility set:
+This set X collects all the bundles that a consumer can imagine - realistic or not. Basic assumptions:
+- Non-negativity: All goods in the consumption bundle are assumed to be non-negative, i.e., X_i >= 0 for all i.
+- Non-emptiness: The set X is never empty, i.e., there is always at least one consumption bundle that the consumer can imagine.
+- A parallel idea on the producer side is the production possibility set - set of feasibile input/output combinations that a firm can produce.
+- Formally: X = {x: x_i >= 0 for all i}, X != ∅.
+
+Additivity:
+- If two bundles have the same type of goods, but in different quantities, then they can be added together to form a new bundle.
+
+Divisibility:
+- Alpha (α)-scalability: If a bundle can be scaled by a positive factor α, then the resulting bundle is also a valid consumption bundle. This is useful for modeling proportional changes in consumption.
+- This is harder to defend than additivity (might require redefining the good), but it helps in easier mathematical modeling of consumption possibilities.
+
+Convexity:
+- If X and Y are two bundles in a set and a line is drawn to connect them, then if that line stays in the set, it is called a convex set.
+- Line can be written as a convex combination of X and Y, i.e., λX + (1-λ)Y for λ in [0,1].
+- At  λ = 0, the line is at Y, and at λ = 1, the line is at X. For any λ in between, the line represents a mixture of the two bundles.
+- Our assumption is we follow the convex set rule under the mathematical conditions.
+
+From Possibility to Feasibility:
+We bring in real-world constraints to limit what all a consumer can actually consume:
+- Legal: Law might prohibit the consumption of certain goods or restrict the quantities that can be consumed.
+- Geographical: Some goods might be restricted in some places.
+- Financial: Some items may be too expensive for the consumer to afford, limiting their consumption possibilities.
+- We assume that if the financial constraint can be overcome, the other two are not much of an issue.
+
+In mathematical modelling, we assume a 2-good world where X_1 is the primary good we are interested in, and X_2 is the set of all other goods. We assume that only one good at a time will be consumed. Economics is findamentally about trade-offs between benefit and cost.
+
+Feasibility: Deriving the budget (financial) constraint:
+Price of good X_i is P_i and the consumer has a disposable income of M. The budget constraint can be written as:
+P_1 * X_1 + P_2 * X_2 <= M.
+
+We are defining that rational consumers operate under the above constraint, meaning they will choose consumption bundles that do not exceed their disposable income as opposed to irrational consumers who might use credit or borrow beyond their means.
+
+The Budget Line:
+The budget line represents all the combinations of X_1 and X_2 that exactly exhaust the consumer's disposable income. It can be derived from the budget constraint by turning the inequality into an equality:
+P_1 * X_1 + P_2 * X_2 = I.
+
+Solving for X_2 in terms of X_1 gives:
+X_2 = (I / P_2) - (P_1 / P_2) * X_1.
+
+Vertical intercept (X_1 = 0): I / P_2 - all income spent on X_2
+Horizontal intercept (X_2 = 0): I / P_1 - all income spent on X_1
+Slope of line: -P_1 / P_2
+The slope indicates the rate at which the consumer must give up X_2 to obtain an additional unit of X_1 while staying within the budget.
+Area within the line is feasibile set.
+
+The Budget Set:
+The budget line splits the non-negative orthant into two parts:
+- Above or outside the line - exceed income - not feasible.
+- On or below the line - within income - feasible.
+- Boundary made of 3 parts: the budget line itself, the vertical axis (X_1 = 0), and the horizontal axis (X_2 = 0).
+
+I, P1, P2 don't have to be just monetary. Another constraint consumers face is the time, and choosing what to do with time is also a behavourial trait we should consider when analyzing consumer behavior.
+For example, if we denote T as the total available time and t_1 and t_2 as the time spent on activities 1 and 2 respectively, we have a time constraint:
+t_1 + t_2 <= T.
+This adds another layer to the consumer's decision-making process, as they must now allocate both their financial and temporal resources efficiently. Time can also be considered to be similar to income, which needs to be spent wisely.
+
+Robinson Crusoe example:
+Consider a simple economy with only one consumer, Robinson Crusoe. He has a limited amount of time and resources to allocate between different activities such as fishing and gathering coconuts. His choices are constrained by both his budget (resources) and his time. This example illustrates how consumers must make trade-offs and allocate their limited resources efficiently.
+
+In this context, Robinson Crusoe's budget constraint can be represented as:
+P_f * F + P_c * C <= I,
+where F and C are the quantities of fish and coconuts, P_f and P_c are their respective prices, and I is his total resources. Similarly, his time constraint can be represented as:
+t_f + t_c <= T,
+where t_f and t_c are the time spent on fishing and gathering coconuts, and T is the total available time. These constraints together define the feasible set of choices for Robinson Crusoe.
+
+If P_f = 1, P_c = 2, and I = 8, then the budget constraint becomes:
+1 * F + 2 * C <= 8.
+This can be represented as the budget line - exactly like the price-based budget line.
+
+A change in productivity also shifts the budget line. If P_c = 1 after learning some new skills, the new budget constraint becomes:
+1 * F + 1 * C <= 8.
+This represents a new budget line that is less steep, indicating that he has more time to allocate to conduct his tasks. While total time remains same, the feasability zone has expanded.
+Similarly, if the price of a commodity falls, the total income is same, but the consumer can now afford more of that commodity, effectively expanding the feasible set.
+
+However, if the disposable income changes (or time in Robinson's case), the budget line will shift parallely outward or inward, depending on whether the income (or available time) increases or decreases, with the same slope.
+
+GOVERNMENT INTERVENTIONS
+
+When the government affects disposable income in forms of taxes, the feasability area changes. Taxes can be applied on goods which increases their price. Sometimes rationing is also implemented which limits the quantity of goods that can be consumed, affecting the feasability area. Government also provides coupons or subsudies which end up affecting a single good, kinking the line.
+
+For taxes, a consumer keeps only a fraction of the income alpha, where 0 < alpha < 1 by paying 1 - alpha as taxes. The budget constraint then becomes:
+alpha * I = P_1 * X_1 + P_2 * X_2.
+
+For rationing, if the government imposes a limit of K quantity for the good X_1, then all bundles with X_1 quantities > K are not feasible. The budget set is cut at X_1 = K.
+
+
